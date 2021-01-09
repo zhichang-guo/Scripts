@@ -63,6 +63,8 @@ def find_nearest_point(option, strLocation, lons, lats, mask):
     xlon, xlat = lonlatS2F(strLocation)
     if xlon < 0.0:
         xlon += 360.
+    xlona = xlon - 360.
+    xlonb = xlon + 360.
     distanceMin = 9999.9
     x_index = -1
     y_index = -1
@@ -75,9 +77,12 @@ def find_nearest_point(option, strLocation, lons, lats, mask):
             if option.upper() == 'ALL' or ('LAND' in option.upper() and mask[lid] > 0):
                 if lons[lid] < 0.0:
                     lons[lid] += 360.
-                distance = (xlon-lons[lid])*(xlon-lons[lid]) + (xlat-lats[lid])*(xlat-lats[lid])
-                if distance <= distanceMin:
-                    distanceMin = distance
+                distLat = (xlat-lats[lid])*(xlat-lats[lid])
+                dist  = (xlon-lons[lid])*(xlon-lons[lid]) + distLat
+                distA = (xlona-lons[lid])*(xlona-lons[lid]) + distLat
+                distB = (xlonb-lons[lid])*(xlonb-lons[lid]) + distLat
+                if dist <= distanceMin or distA <= distanceMin or distB <= distanceMin:
+                    distanceMin = min(dist,min(distA,distB))
                     x_index = lid
                     found = 1
 #               print(str(lid)+": "+lonlatF2S(xlon,xlat)+" "+lonlatF2S(lons[lid],lats[lid])+" "+f2s(distance)+" "+f2s(distanceMin))
@@ -87,9 +92,12 @@ def find_nearest_point(option, strLocation, lons, lats, mask):
                 if option.upper() == 'ALL' or ('LAND' in option.upper() and mask[xid,yid] > 0):
                     if lons[xid] < 0.0:
                         lons[xid] += 360.
-                    distance = (xlon-lons[xid])*(xlon-lons[xid]) + (xlat-lats[yid])*(xlat-lats[yid])
-                    if distance <= distanceMin:
-                        distanceMin = distance
+                    distLat = (xlat-lats[yid])*(xlat-lats[yid])
+                    dist  = (xlon-lons[xid])*(xlon-lons[xid]) + distLat
+                    distA = (xlona-lons[xid])*(xlona-lons[xid]) + distLat
+                    distB = (xlonb-lons[xid])*(xlonb-lons[xid]) + distLat
+                    if dist <= distanceMin or distA <= distanceMin or distB <= distanceMin:
+                        distanceMin = min(dist,min(distA,distB))
                         x_index = xid
                         y_index = yid
                         found = 1
