@@ -6,7 +6,7 @@ A repository for various scripts and tools
   <body>
     <ol>
       <li>
-      Find the nearest grid index with given lat/lon from a pool of locations stored in a netcdf file:
+      <ul>Find the nearest grid index with given lat/lon from a pool of locations stored in a netcdf file:</ul>
         <li>1. For vector data, longitude/latitude are assumed to be functions of grid point.
                     This code will find the nearest grid point index with given lon/lat. 
                     python find_nearest_point.py -i file_name.nc -l 60W,20S</li>
