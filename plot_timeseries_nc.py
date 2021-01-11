@@ -1,4 +1,28 @@
 #!/usr/bin/env python3
+###############################################################################################
+## plot time series of variables stored in netcdf files, examples:
+##   1. python plot_timeseries_nc.py -i file_name.nc -v vname1,vname2 
+##      1D variable is assumed to be time-dependent. The code draws time series of 2 variables.
+##      2D(vector,time) variable, it draws time series of 2 variables averaged over all points.
+##      3D(lon,lat,time) variable. The code draws domain average time series of 2 variables.
+##   2. python plot_timeseries_nc.py -i data_name.nc -v vname1-vname2 -t 2,-2 -factor 86400
+##      Draw time series of difference, factored by 86400, between vname1 and vname2 for the
+##      time segment from the second record to the second last record.
+##   3. python plot_timeseries_nc.py -i data_name.nc -g geo_name -v vname -lon lon -lat lat
+##      The code will find the grid point which is closest to the given location(lon/lat) and 
+##      draw the time series. The variable vname is assumed to be stored in data_name.nc while
+##      the geographic information is stored in geo_name. If the files are located in the same
+##      directory, the directory path just needs to be specified in one file name.
+##   4. python plot_timeseries_nc.py -i data_name.nc -v vname -lon lon1,lon2 -lat lat1,lat2
+##      The code will average the variable over the domain (lon1,lon2),(lat1,lat2) and draw
+##      the time series
+##   5. python plot_timeseries_nc.py -i data_name.nc -v vname -p point_index -l dotted -c red
+##      Draw time series of the variable at the location with point_index. The data are drawn
+##      with the dotted red line.
+##   6. python plot_timeseries_nc.py -i data_name.nc -v vname -p point_index -s no
+##      The code draws the time series and output it to a png file.
+## Author: Zhichang Guo, email: Zhichang.Guo@noaa.gov
+###############################################################################################
 import matplotlib
 import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
@@ -15,7 +39,6 @@ from datetime import timedelta
 from datetime import datetime
 
 def plot_time_series(dataX, timeX, dataY, metadata, plotpath, screen, varnames, comment, color, style):
-    # plot generic world map
     defaultColors = np.array(['b', 'g', 'r', 'c', 'm', 'y', 'k'])
     if screen.upper() == "NO":
         matplotlib.use('agg')
@@ -68,11 +91,10 @@ def find_nearest_point(strLon, strLat, lons, lats):
             index = lid
             found = 1
     if found > 0:
-        lpt_index = index
+        return index
     else:
         print(strLon+" "+strLat+" "+str(dist)+" "+str(len(lons)))
         sys.exit("the nearest point is not found")
-    return lpt_index
 
 def find_nearest_point2D(strLon, strLat, lons, lats):
     xlon = float(strLon)
@@ -211,7 +233,6 @@ def read_single_var(datanc, varname, tstep, lonr, latr, lpt, lons, lats):
                     i = tstepBeg + tid
                     cnt = 0.0
                     dataX[tid] = i
-                    #timeX[tid] = datetime(year=1970, month=1, day=1, hour=0, minute=0, second=0) + timedelta(seconds=timetmp[i])
                     timeX = np.append(timeX,datetime(year=1970, month=1, day=1, hour=0, minute=0, second=0) + timedelta(seconds=timetmp[i]))
                     dataY[tid] = datatmp[i][lpt_index]
                 comment = 'Location: %s, %s; Index: %s' % (lonF2S(lons[lpt_index]), latF2S(lats[lpt_index]), lpt_index)
@@ -236,7 +257,6 @@ def read_single_var(datanc, varname, tstep, lonr, latr, lpt, lons, lats):
                     i = tstepBeg + tid
                     cnt = 0.0
                     dataX[tid] = i
-                    #timeX[tid] = datetime(year=1970, month=1, day=1, hour=0, minute=0, second=0) + timedelta(seconds=timetmp[i])
                     timeX = np.append(timeX,datetime(year=1970, month=1, day=1, hour=0, minute=0, second=0) + timedelta(seconds=timetmp[i]))
                     for lid in range(lds):
                         if lons[lid] >= lonBeg and lons[lid] <= lonEnd and lats[lid] >= latBeg and lats[lid] <= latEnd:
@@ -246,7 +266,7 @@ def read_single_var(datanc, varname, tstep, lonr, latr, lpt, lons, lats):
                         dataY[tid] /= cnt
                     else:
                         dataY[tid] = -999999.99
-                comment = 'Domain average: %s - %s, %s - %s' % (lonF2S(lonBed), lonF2S(lonEnd), latF2S(latBeg), latF2S(latEnd))
+                comment = 'Domain average: %s - %s, %s - %s' % (lonF2S(lonBeg), lonF2S(lonEnd), latF2S(latBeg), latF2S(latEnd))
             else:
                 sys.exit("no data to plot")
     elif dims == 3:
@@ -276,7 +296,6 @@ def read_single_var(datanc, varname, tstep, lonr, latr, lpt, lons, lats):
                     t_index = tstepBeg + tid
                     cnt = 0.0
                     dataX[tid] = t_index
-                    #timeX[tid] = datetime(year=1970, month=1, day=1, hour=0, minute=0, second=0) + timedelta(seconds=timetmp[i])
                     timeX = np.append(timeX,datetime(year=1970, month=1, day=1, hour=0, minute=0, second=0) + timedelta(seconds=timetmp[t_index]))
                     dataY[tid] = datatmp[t_index][j_index][i_index]
                 comment = 'Location: %s, %s; Index: %s, %s' % (lonF2S(lons[i_index]), latF2S(lats[j_index]), str(i_index), str(j_index))
@@ -302,7 +321,6 @@ def read_single_var(datanc, varname, tstep, lonr, latr, lpt, lons, lats):
                     t_index = tstepBeg + tid
                     cnt = 0.0
                     dataX[tid] = t_index
-                    #timeX[tid] = datetime(year=1970, month=1, day=1, hour=0, minute=0, second=0) + timedelta(seconds=timetmp[i])
                     timeX = np.append(timeX,datetime(year=1970, month=1, day=1, hour=0, minute=0, second=0) + timedelta(seconds=timetmp[t_index]))
                     for yid in range(yds):
                         if lats[yid] >= latBeg and lats[yid] <= latEnd:
@@ -377,9 +395,8 @@ def read_var(datapath, geopath, varname, tstep, lonr, latr, lpt, fact):
     return dataX, timeX, dataY, varnames, comment
 
 def gen_figure(inpath, geopath, outpath, varname, screen, tstep, lonr, latr, lpt, fact, colors, styles):
-    # read the files to get the 2D array to plot
     dataX, timeX, dataY, varnames, comment = read_var(inpath, geopath, varname, tstep, lonr, latr, lpt, fact)
-    plotpath = outpath+'/timeseries_%s.png' % (varname)
+    plotpath = outpath+'/timeseries_%s.png' % varname.split(',')[0]
     metadata = {
                 'var': varname
                 }
@@ -392,7 +409,7 @@ if __name__ == "__main__":
     ap.add_argument('-g', '--geo', help="path to the geographic info file", default="")
     ap.add_argument('-v', '--variable', help="variable name to plot", required=True)
     ap.add_argument('-s', '--screen', help="no if plot to file", default="yes")
-    ap.add_argument('-t', '--tstep', help="time step for plotting", default=0)
+    ap.add_argument('-t', '--tstep', help="time step for plotting", default="0,-1")
     ap.add_argument('-p', '--point', help="location index for plotting", default="")
     ap.add_argument('-c', '--color', help="color for lines", default="")
     ap.add_argument('-l', '--linestyle', help="line styles", default="")
