@@ -5,7 +5,7 @@ A repository for various scripts and tools
   <head></head>
   <body>
     <ol>
-      <h2>Find the nearest grid index with given lat/lon from a pool of locations stored in a netcdf file:</h2>
+      <h3>Find the nearest grid index with given lat/lon from a pool of locations stored in a netcdf file:</h3>
         <ul><li>For vector data, longitude/latitude are assumed to be functions of grid point.
                 This code will find the nearest grid point index with given lon/lat.<br> 
                 python find_nearest_point.py -i file_name.nc -l 60W,20S</li>
@@ -18,7 +18,7 @@ A repository for various scripts and tools
                 Otherwise, specify them with the flag -v.<br>
                 python find_nearest_point.py -i file_name.nc -l 60W,20S -v lon/lat/mask</li>
         </ul>
-      <h2>Plot time series of variables stored in netcdf files, examples:</h2>
+      <h3>Plot time series of variables stored in netcdf files, examples:</h3>
         <ul><li>python plot_timeseries_nc.py -i file_name.nc -v vname1,vname2 <br>
                 1D variable is assumed to be time-dependent. The code draws time series of 2 variables.
                 2D(vector,time) variable, it draws time series of 2 variables averaged over all points.
