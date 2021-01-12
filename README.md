@@ -5,7 +5,7 @@ A repository for scripts: <a href="#nearest">Find the nearest point</a>, <a href
   <head></head>
   <body>
     <ol>
-      <h3><a id="find" href="#nearest">Given longitude/latitude, find the nearest grid point from locations stored in a netcdf file</a>:</h3>
+      <h3><a id="user-content-nearest" href="#nearest">Given longitude/latitude, find the nearest grid point from locations stored in a netcdf file</a>:</h3>
         <ul><li>For vector data, longitude/latitude are assumed to be functions of grid point.
                 This code will find the nearest grid point index with lon/lat provided.<br> 
                 <pre><code>python find_nearest_point.py -i file_name.nc -l 60W,20S</code></pre></li>
@@ -17,7 +17,7 @@ A repository for scripts: <a href="#nearest">Find the nearest point</a>, <a href
             <li>The default variable names are longitude/latitude/lsmask. Otherwise, specify them with the flag -v.<br>
                 <pre><code>python find_nearest_point.py -i file_name.nc -l 60W,20S -v lon/lat/mask</code></pre></li>
         </ul>
-      <h3><a id="time" href="#timeseries">Plot time series of variables stored in netcdf files, examples</a>:</h3>
+      <h3><a id="user-content-timeseries" href="#timeseries">Plot time series of variables stored in netcdf files, examples</a>:</h3>
         <ul><li><pre><code>python plot_timeseries_nc.py -i file_name.nc -v vname1,vname2 </code></pre>
                 For 1D (time) variable, the code draws time series of 2 variables;
                 For 2D(vector,time) variable, it draws time series of 2 variables averaged over all points;
@@ -39,7 +39,7 @@ A repository for scripts: <a href="#nearest">Find the nearest point</a>, <a href
             <li><pre><code>python plot_timeseries_nc.py -i data_name.nc -v vname -p point_index -s no</code></pre>
                 The code draws the time series and outputs it to a png file.</li>
         </ul>
-      <h3><a id="geo" href="snapshot">Create a plot on a map with irregularly spaced data stored in netcdf files, examples</a>:</h3>
+      <h3><a id="user-content-snapshot" href="#snapshot">Create a plot on a map with irregularly spaced data stored in netcdf files, examples</a>:</h3>
         <ul><li><pre><code>python plot_snapshot_nc.py -i file_name.nc -v vname</code></pre> 
                 1D variable is assumed to be stationary vector data. Also assume lon/lat and the variable
                 are stored in the same file. For 2D(vector,time) and 3D(lon,lat,time) variable, the 
