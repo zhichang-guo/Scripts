@@ -1,5 +1,5 @@
 # Scripts
-A repository for various scripts and tools
+A repository for scripts and tools
 <!DOCTYPE html>
 <html lang="en">
   <head></head>
@@ -8,11 +8,10 @@ A repository for various scripts and tools
       <h3>Given longitude/latitude information, find the nearest grid point from locations stored in a netcdf file:</h3>
         <ul><li>For vector data, longitude/latitude are assumed to be functions of grid point.
                 This code will find the nearest grid point index with given lon/lat.<br> 
-                python find_nearest_point.py -i file_name.nc -l 60W,20S
-            </li>
+                <pre><code>python find_nearest_point.py -i file_name.nc -l 60W,20S</code></pre></li>
             <li>For field data, lon/lat are assumed to be functions of i/j index respectively.
                 This code will find the nearest i/j index with given lon/lat.<br>
-                python find_nearest_point.py -i file_name.nc -l 60W,20S -f field</li>
+                <pre><code>python find_nearest_point.py -i file_name.nc -l 60W,20S -f field</code></pre></li>
             <li>Find the nearest grid point only over land/ocean, land-sea mask is required.<br> 
                 python find_nearest_point.py -i file_name.nc -l 60W,20S -g land</li>           
             <li>The default variable names are assumed to be longitude/latitude/lsmask. 
