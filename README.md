@@ -5,7 +5,7 @@ A repository for scripts
   <head></head>
   <body>
     <ol>
-      <h3>Given longitude/latitude information, find the nearest grid point from locations stored in a netcdf file:</h3>
+      <h3>Given longitude/latitude, find the nearest grid point from locations stored in a netcdf file:</h3>
         <ul><li>For vector data, longitude/latitude are assumed to be functions of grid point.
                 This code will find the nearest grid point index with lon/lat provided.<br> 
                 <pre><code>python find_nearest_point.py -i file_name.nc -l 60W,20S</code></pre></li>
@@ -18,26 +18,26 @@ A repository for scripts
                 <pre><code>python find_nearest_point.py -i file_name.nc -l 60W,20S -v lon/lat/mask</code></pre></li>
         </ul>
       <h3>Plot time series of variables stored in netcdf files, examples:</h3>
-        <ul><li><pre><code>python plot_timeseries_nc.py -i file_name.nc -v vname1,vname2 </code></pre><br>
-                1D variable is assumed to be time-dependent. The code draws time series of 2 variables.
-                2D(vector,time) variable, it draws time series of 2 variables averaged over all points.
-                3D(lon,lat,time) variable. The code draws domain average time series of 2 variables.</li>
-            <li><pre><code>python plot_timeseries_nc.py -i data_name.nc -v vname1-vname2 -t 2,-2 -factor 86400</code></pre><br>
-                Draw time series of difference, factored by 86400, between vname1 and vname2 for the
-                time segment from the second record to the second last record.</li>
-            <li><pre><code>python plot_timeseries_nc.py -i data_name.nc -g geo_name -v vname -lon lon -lat lat</code></pre><br>
+        <ul><li><pre><code>python plot_timeseries_nc.py -i file_name.nc -v vname1,vname2 </code></pre>
+                For 1D (time) variable, the code draws time series of 2 variables;
+                For 2D(vector,time) variable, it draws time series of 2 variables averaged over all points;
+                For 3D(lon,lat,time) variable, it draws domain average time series of 2 variables.</li>
+            <li><pre><code>python plot_timeseries_nc.py -i data_name.nc -v vname1-vname2 -t 2,-3 -factor 86400</code></pre>
+                It draws time series of difference, multiplied by 86400, between vname1 and vname2 for the
+                time segment from the second record to the third last record.</li>
+            <li><pre><code>python plot_timeseries_nc.py -i data.nc -g geo.nc -v vname -lon lon -lat lat</code></pre>
                 The code will find the grid point which is closest to the given location(lon/lat) and 
-                draw the time series. The variable vname is assumed to be stored in data_name.nc while
-                the geographic information is stored in geo_name. If the files are located in the same
-                directory, the directory path just needs to be specified in one file name.</li>
-            <li><pre><code>python plot_timeseries_nc.py -i data_name.nc -v vname -lon lon1,lon2 -lat lat1,lat2</code></pre><br>
+                draw the time series. The variable vname is assumed to be stored in data.nc while
+                the geographic information is stored in geo.nc. If the files are located in the same
+                directory, the directory path just needs to be specified in one file.</li>
+            <li><pre><code>python plot_timeseries_nc.py -i data_name.nc -v vname -lon lon1,lon2 -lat lat1,lat2</code></pre>
                 The code will average the variable over the domain (lon1,lon2),(lat1,lat2) and draw
                 the time series.</li>
-            <li><pre><code>python plot_timeseries_nc.py -i data_name.nc -v vname -p point_index -l dotted -c red</code></pre><br>
+            <li><pre><code>python plot_timeseries_nc.py -i data_name.nc -v vname -p point_index -l dotted -c red</code></pre>
                 Draw time series of the variable at the location with point_index. The data are drawn
                 with the dotted red line.</li>
-            <li><pre><code>python plot_timeseries_nc.py -i data_name.nc -v vname -p point_index -s no</code></pre><br>
-                The code draws the time series and output it to a png file.</li>
+            <li><pre><code>python plot_timeseries_nc.py -i data_name.nc -v vname -p point_index -s no</code></pre>
+                The code draws the time series and outputs it to a png file.</li>
         </ul>
       <h3>Create a plot on a map with irregularly spaced data stored in netcdf files, examples:</h3>
         <ul><li><pre><code>python plot_snapshot_nc.py -i file_name.nc -v vname</code></pre><br> 
