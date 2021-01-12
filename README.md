@@ -40,6 +40,22 @@ A repository for various scripts and tools
             <li>python plot_timeseries_nc.py -i data_name.nc -v vname -p point_index -s no<br>
                 The code draws the time series and output it to a png file.</li>
         </ul>
+      <h3>PCreate a plot on a map with irregularly spaced data stored in netcdf files, examples:</h3>
+        <ul><li>python plot_snapshot_nc.py -i file_name.nc -v vname<br> 
+                1D variable is assumed to be stationary vector data. Also assume lon/lat and the variable
+                can be found in the same file. For 2D(vector,time) and 3D(lon,lat,time) variable, the 
+                code creates a geographical plot with data averaged over the time domain.</li>
+            <li>python plot_snapshot_nc.py -i data_name.nc -v vname1-vname2 -t 2,-3 -factor 86400<br>
+                Make a graphical plot of difference, multiplied by 86400, between vname1 and vname2 and
+                averaged over the time segment from the second record to the third last record.</li>
+            <li>python plot_snapshot_nc.py -i data.nc -g geo.nc -v vname -lon lon1,lon2 -lat lat1,lat2<br>
+                The code will make a geographical plot over a specific spatial domain. The variable vname
+                is assumed to be stored in data.nc while the geographic information is stored in geo.nc.
+                If the files are located in the same directory, the directory path just needs to be
+                specified in one file.</li>
+            <li>python plot_snapshot_nc.py -i data.nc -g geo.nc -v vname -s no -t 128<br>
+                The code makes a geographical plot for the time step 128 and output it to a png file.</li>
+        </ul>
     </ol>
   </body>
 </html>
