@@ -15,7 +15,7 @@ A repository for scripts: <a href="#nearest">Find the nearest point</a>, <a href
             <li>Find the nearest grid point only over land or ocean. It is noted that land-sea mask is required.<br> 
                 <pre><code>python find_nearest_point.py -i file_name.nc -l 60W,20S -g land</code></pre></li>           
             <li>The default variable names are longitude/latitude/lsmask. Otherwise, specify them with the flag -v.<br>
-                <pre><code>python find_nearest_point.py -i file_name.nc -l 60W,20S -v lon/lat/mask</code></pre></li>
+                <pre><code>python find_nearest_point.py -i file_name.nc -l 60W,20S -v lon,lat,mask</code></pre></li>
         </ul>
       <h3><a id="user-content-timeseries" href="#timeseries">Plot time series of variables stored in netcdf files, examples</a>:</h3>
         <ul><li><pre><code>python plot_timeseries_nc.py -i file_name.nc -v vname1,vname2 </code></pre>
