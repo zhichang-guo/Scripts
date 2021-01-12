@@ -12,7 +12,7 @@ A repository for scripts
             <li>For field data, lon/lat are assumed to be functions of i/j index respectively.
                 This code will find the nearest i/j index with given lon/lat.<br>
                 <pre><code>python find_nearest_point.py -i file_name.nc -l 60W,20S -f field</code></pre></li>
-            <li>Find the nearest grid point only over land or ocean, noted that land-sea mask is required.<br> 
+            <li>Find the nearest grid point only over land or ocean. It is noted that land-sea mask is required.<br> 
                 <pre><code>python find_nearest_point.py -i file_name.nc -l 60W,20S -g land</code></pre></li>           
             <li>The default variable names are longitude/latitude/lsmask. Otherwise, specify them with the flag -v.<br>
                 <pre><code>python find_nearest_point.py -i file_name.nc -l 60W,20S -v lon/lat/mask</code></pre></li>
@@ -40,19 +40,21 @@ A repository for scripts
                 The code draws the time series and outputs it to a png file.</li>
         </ul>
       <h3>Create a plot on a map with irregularly spaced data stored in netcdf files, examples:</h3>
-        <ul><li><pre><code>python plot_snapshot_nc.py -i file_name.nc -v vname</code></pre><br> 
+        <ul><li><pre><code>python plot_snapshot_nc.py -i file_name.nc -v vname</code></pre> 
                 1D variable is assumed to be stationary vector data. Also assume lon/lat and the variable
-                can be found in the same file. For 2D(vector,time) and 3D(lon,lat,time) variable, the 
+                are stored in the same file. For 2D(vector,time) and 3D(lon,lat,time) variable, the 
                 code creates a geographical plot with data averaged over the time domain.</li>
-            <li><pre><code>python plot_snapshot_nc.py -i data_name.nc -v vname1-vname2 -t 2,-3 -factor 86400</code></pre><br>
-                Make a graphical plot of difference, multiplied by 86400, between vname1 and vname2 and
+            <li><pre><code>python plot_snapshot_nc.py -i data.nc -g geo.nc -v vname -f field</code></pre> 
+                The variable vname is assumed to be stored in data.nc while the geographic information is stored in
+                geo.nc. If the files are located in the same directory, the directory path just needs to be
+                specified in one file. With the flag "-f field", 2D variable is assumed to be stationary field data (lon,lat)
+                instead of time-varying vectors (vector,time).</li>
+            <li><pre><code>python plot_snapshot_nc.py -i data_name.nc -v vname1-vname2 -t 2,-3 -factor 86400</code></pre>
+                Make a graphical plot of difference between vname1 and vname2. The data are multiplied by 86400 and
                 averaged over the time segment from the second record to the third last record.</li>
-            <li><pre><code>python plot_snapshot_nc.py -i data.nc -g geo.nc -v vname -lon lon1,lon2 -lat lat1,lat2</code></pre><br>
-                The code will make a geographical plot over a specific spatial domain. The variable vname
-                is assumed to be stored in data.nc while the geographic information is stored in geo.nc.
-                If the files are located in the same directory, the directory path just needs to be
-                specified in one file.</li>
-            <li><pre><code>python plot_snapshot_nc.py -i data.nc -g geo.nc -v vname -s no -t 128</code></pre><br>
+            <li><pre><code>python plot_snapshot_nc.py -i data.nc -g geo.nc -v vname -lon lon1,lon2 -lat lat1,lat2</code></pre>
+                The code will make a geographical plot over a specific spatial domain.</li>
+            <li><pre><code>python plot_snapshot_nc.py -i data.nc -g geo.nc -v vname -s no -t 128</code></pre>
                 The code makes a geographical plot for the time step 128 and output it to a png file.</li>
         </ul>
     </ol>
