@@ -8,7 +8,7 @@ A repository for various scripts and tools
       <h3>Given longitude/latitude information, find the nearest grid point from locations stored in a netcdf file:</h3>
         <ul><li>For vector data, longitude/latitude are assumed to be functions of grid point.
                 This code will find the nearest grid point index with given lon/lat.<br> 
-                <a> python find_nearest_point.py -i file_name.nc -l 60W,20S</a>
+                python find_nearest_point.py -i file_name.nc -l 60W,20S
             </li>
             <li>For field data, lon/lat are assumed to be functions of i/j index respectively.
                 This code will find the nearest i/j index with given lon/lat.<br>
