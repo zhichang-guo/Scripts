@@ -40,7 +40,7 @@ A repository for various scripts and tools
             <li>python plot_timeseries_nc.py -i data_name.nc -v vname -p point_index -s no<br>
                 The code draws the time series and output it to a png file.</li>
         </ul>
-      <h3>PCreate a plot on a map with irregularly spaced data stored in netcdf files, examples:</h3>
+      <h3>Create a plot on a map with irregularly spaced data stored in netcdf files, examples:</h3>
         <ul><li>python plot_snapshot_nc.py -i file_name.nc -v vname<br> 
                 1D variable is assumed to be stationary vector data. Also assume lon/lat and the variable
                 can be found in the same file. For 2D(vector,time) and 3D(lon,lat,time) variable, the 
