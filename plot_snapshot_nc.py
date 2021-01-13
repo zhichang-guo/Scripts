@@ -123,7 +123,7 @@ def plot_world_map(lons, lats, data, metadata, plotpath, screen, lonr, latr, com
     else:
         plt.show()
 
-def read_var(datapath, geopath, varname, tstep, fact):
+def read_var(datapath, geopath, varname, tstep, fov, fact):
     obsfiles = glob.glob(datapath)
     geofile  = glob.glob(geopath)
     opath, obsfname = ntpath.split(datapath)
@@ -182,31 +182,50 @@ def read_var(datapath, geopath, varname, tstep, fact):
             data = np.concatenate((data,datatmp))
             comment = ''
         elif dims == 2:
-            tds = len(datatmp) - 1
-            lds = len(datatmp[0])
-            if ',' in tstep:
-                tstepBeg, tstepEnd = tstepS2I(tstep, tds)
-                tsteps = tstepEnd - tstepBeg + 1
-                data = np.zeros(lds)
-                for lid in range(lds):
-                    cnt = 0.0
-                    for i in range(tsteps):
-                        tid = i + tstepBeg
-                        data[lid] += datatmp[tid][lid]
-                        cnt += 1.0
-                    if cnt > 0.5:
-                        data[lid] /= cnt
-                    else:
-                        data[lid] = -999999.99
-                comment = 'Time average: %s - %s' % (str(tstepBeg), str(tstepEnd))
+            if 'VECTOR' in fov.upper():
+                tds = len(datatmp) - 1
+                lds = len(datatmp[0])
+                if ',' in tstep:
+                    tstepBeg, tstepEnd = tstepS2I(tstep, tds)
+                    tsteps = tstepEnd - tstepBeg + 1
+                    data = np.zeros(lds)
+                    for lid in range(lds):
+                        cnt = 0.0
+                        for i in range(tsteps):
+                            tid = i + tstepBeg
+                            data[lid] += datatmp[tid][lid]
+                            cnt += 1.0
+                        if cnt > 0.5:
+                            data[lid] /= cnt
+                        else:
+                            data[lid] = -999999.99
+                    comment = 'Time average: %s - %s' % (str(tstepBeg), str(tstepEnd))
+                else:
+                    timestep = int(tstep)
+                    if timestep < 0:
+                        timestep += len(datatmp)
+                    timestep = max(timestep,0)
+                    timestep = min(timestep,tds)
+                    data = np.concatenate((data,datatmp[timestep]))
+                    comment = 'Time step: %s of 0 - %s' % (str(timestep), tds)
+            elif 'FIELD' in fov.upper():
+                yds = len(datatmp)
+                xds = len(datatmp[0])
+                lons_new = np.zeros((yds*xds))
+                lats_new = np.zeros((yds*xds))
+                data_new = np.zeros((yds*xds))
+                for yid in range(yds):
+                    for xid in range(xds):
+                        lid = yid*xds + xid
+                        lons_new[lid] = lons[xid]
+                        lats_new[lid] = lats[yid]
+                        data_new[lid] = datatmp[yid][xid]
+                lons = lons_new
+                lats = lats_new
+                data = data_new
+                comment = 'Stationary Field'
             else:
-                timestep = int(tstep)
-                if timestep < 0:
-                    timestep += len(datatmp)
-                timestep = max(timestep,0)
-                timestep = min(timestep,tds)
-                data = np.concatenate((data,datatmp[timestep]))
-                comment = 'Time step: %s of 0 - %s' % (str(timestep), tds)
+                sys.exit("Error: invalid fov option")
         elif dims == 3:
             tds = len(datatmp) - 1
             yds = len(datatmp[0])
@@ -256,9 +275,9 @@ def read_var(datapath, geopath, varname, tstep, fact):
             comment += '; Factor: %s'%(fact)
     return data, lons, lats, comment
 
-def gen_figure(inpath, geopath, outpath, varname, screen, tstep, lonr, latr, fact):
+def gen_figure(inpath, geopath, outpath, varname, screen, tstep, fov, lonr, latr, fact):
     # read the files to get the 2D array to plot
-    data, lons, lats, comment = read_var(inpath, geopath, varname, tstep, fact)
+    data, lons, lats, comment = read_var(inpath, geopath, varname, tstep, fov, fact)
     plotpath = outpath+'/%s.png' % (varname)
     metadata = {
                 'var': varname
@@ -273,8 +292,9 @@ if __name__ == "__main__":
     ap.add_argument('-v', '--variable', help="variable name to plot", required=True)
     ap.add_argument('-s', '--screen', help="no if plot to file", default="yes")
     ap.add_argument('-t', '--tstep', help="time step for plotting", default="0,-1")
+    ap.add_argument('-f', '--fov', help="field or vector data", default="vector")
     ap.add_argument('-lon', '--longitude', help="longitude range for plotting", default="-180,180")
     ap.add_argument('-lat', '--latitude', help="latitude range for plotting", default="-90,90")
     ap.add_argument('-factor', '--fact', help="factor for units conversion", default="1")
     MyArgs = ap.parse_args()
-    gen_figure(MyArgs.input, MyArgs.geo, MyArgs.output, MyArgs.variable, MyArgs.screen, MyArgs.tstep, MyArgs.longitude, MyArgs.latitude, MyArgs.fact)
+    gen_figure(MyArgs.input, MyArgs.geo, MyArgs.output, MyArgs.variable, MyArgs.screen, MyArgs.tstep, MyArgs.fov, MyArgs.longitude, MyArgs.latitude, MyArgs.fact)
