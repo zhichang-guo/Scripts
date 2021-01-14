@@ -1,25 +1,22 @@
 #!/usr/bin/env python3
 ###############################################################################################
-## plot time series of variables stored in netcdf files, examples:
-##   1. python plot_timeseries_nc.py -i file_name.nc -v vname1,vname2 
-##      1D variable is assumed to be time-dependent. The code draws time series of 2 variables.
-##      2D(vector,time) variable, it draws time series of 2 variables averaged over all points.
-##      3D(lon,lat,time) variable. The code draws domain average time series of 2 variables.
-##   2. python plot_timeseries_nc.py -i data_name.nc -v vname1-vname2 -t 2,-2 -factor 86400
-##      Draw time series of difference, factored by 86400, between vname1 and vname2 for the
-##      time segment from the second record to the second last record.
-##   3. python plot_timeseries_nc.py -i data_name.nc -g geo_name -v vname -lon lon -lat lat
+## plot time series of energy balance terms stored in netcdf files, examples:
+##   1. python plot_energy_nc.py -i file_name.nc
+##      1D variable is assumed to be time-dependent. The code draws time series of all terms.
+##      2D(vector,time) variable, it draws time series of all terms averaged over all points.
+##      3D(lon,lat,time) variable. The code draws domain average time series of all terms.
+##   2. python plot_energy_nc.py -i data_name.nc -t 2,-2
+##      Draw time series of energy balance terms for the time segment from the second record
+##      to the second last record.
+##   3. python plot_energy_nc.py -i data_name.nc -g geo_name -lon lon -lat lat
 ##      The code will find the grid point which is closest to the given location(lon/lat) and 
-##      draw the time series. The variable vname is assumed to be stored in data_name.nc while
+##      draw the time series. The variables are assumed to be stored in data_name.nc while
 ##      the geographic information is stored in geo_name. If the files are located in the same
 ##      directory, the directory path just needs to be specified in one file name.
-##   4. python plot_timeseries_nc.py -i data_name.nc -v vname -lon lon1,lon2 -lat lat1,lat2
-##      The code will average the variable over the domain (lon1,lon2),(lat1,lat2) and draw
+##   4. python plot_energy_nc.py -i data_name.nc -lon lon1,lon2 -lat lat1,lat2
+##      The code will average the variables over the domain (lon1,lon2),(lat1,lat2) and draw
 ##      the time series
-##   5. python plot_timeseries_nc.py -i data_name.nc -v vname -p point_index -l dotted -c red
-##      Draw time series of the variable at the location with point_index. The data are drawn
-##      with the dotted red line.
-##   6. python plot_timeseries_nc.py -i data_name.nc -v vname -p point_index -s no
+##   5. python plot_energy_nc.py -i data_name.nc -v vname -p point_index -s no
 ##      The code draws the time series and output it to a png file.
 ## Author: Zhichang Guo, email: Zhichang.Guo@noaa.gov
 ###############################################################################################
@@ -50,6 +47,17 @@ def plot_time_series(dataX, timeX, dataY, metadata, plotpath, screen, varnames, 
         plttitle = comment
     colors = color.split(',')
     styles = style.split(',')
+    r = np.zeros(len(dataY[0]))
+    for i in range(len(dataY)):
+        factor = 1.
+        if varnames[i] in ['lwup', 'hflx', 'evap']:
+            factor = -1.
+        for lpt in range(len(dataY[0])):
+             r[lpt] += factor * dataY[i][lpt]               
+    varnames.append('residual')
+    dataX = np.insert(dataX,len(dataX),dataX[0],0)
+    timeX = np.insert(timeX,len(timeX),timeX[0],0)
+    dataY = np.insert(dataY,len(dataY),r,0)
     for i in range(len(dataY)):
         time = timeX[i]
         x = dataX[i]
@@ -184,42 +192,60 @@ def tstepS2I(strTStep, tds):
     return tstepBeg, tstepEnd
 
 def read_single_var(datanc, varname, tstep, lonr, latr, lpt, lons, lats):
+    sigma = 5.67E-8
     dataX = np.array([])
     timeX = np.array([])
     dataY = np.array([])
     varname = varname.replace(' ','')
-    if '-' == varname[0] and not '-' in varname[1:]:
-        datatmp = datanc.variables[varname[1:]][:]
+    if varname.lower() == 'swnet':
+        albtmp = datanc.variables['sfalb'][:]
+        datatmp = datanc.variables['dswsfc'][:]
         if len(datatmp.shape) == 1:
             for lid in range(len(datatmp)):
-                datatmp[lid] = -datatmp[lid]
+                datatmp[lid] *= 1. - albtmp[lid]
         elif len(datatmp.shape) == 2:
             for tid in range(len(datatmp)):
                 for lid in range(len(datatmp[0])):
-                    datatmp[tid][lid] = -datatmp[tid][lid]
+                    datatmp[tid][lid] *= 1. - albtmp[tid][lid]
         elif len(datatmp.shape) == 3:
             for tid in range(len(datatmp)):
                 for yid in range(len(datatmp[0])):
                     for xid in range(len(datatmp[0][0])):
-                        datatmp[tid][yid][xid] = -datatmp[tid][yid][xid]
+                        datatmp[tid][yid][xid] *= 1. - albtmp[tid][yid][xid]
         else:
             sys.exit("cannot handle variables with dimensions more than 3 (lon, lat, time or vector, time)")
-    elif '-' in varname:
-        varnames = varname.split('-')
-        datatmp = datanc.variables[varnames[0]][:]
-        datatmp2 = datanc.variables[varnames[1]][:]
+    elif varname.lower() == 'lwup':
+        emistmp = datanc.variables['sfcemis'][:]
+        datatmp = datanc.variables['tsurf'][:]
         if len(datatmp.shape) == 1:
             for lid in range(len(datatmp)):
-                datatmp[lid] -= datatmp2[lid]
+                datatmp[lid] = sigma * pow(datatmp[lid],4) * emistmp[lid]
         elif len(datatmp.shape) == 2:
             for tid in range(len(datatmp)):
                 for lid in range(len(datatmp[0])):
-                    datatmp[tid][lid] -= datatmp2[tid][lid]
+                    datatmp[tid][lid] = sigma * pow(datatmp[tid,lid],4) * emistmp[tid,lid]
         elif len(datatmp.shape) == 3:
             for tid in range(len(datatmp)):
                 for yid in range(len(datatmp[0])):
                     for xid in range(len(datatmp[0][0])):
-                        datatmp[tid][yid][xid] -= datatmp2[tid][yid][xid]
+                        datatmp[tid][yid][xid] = sigma * pow(datatmp[tid,yid,xid],4) * emistmp[tid,yid,xid]
+        else:
+            sys.exit("cannot handle variables with dimensions more than 3 (lon, lat, time or vector, time)")
+    elif varname.lower() == 'lwdown':
+        emistmp = datanc.variables['sfcemis'][:]
+        datatmp = datanc.variables['dlwflx'][:]
+        if len(datatmp.shape) == 1:
+            for lid in range(len(datatmp)):
+                datatmp[lid] *= emistmp[lid]
+        elif len(datatmp.shape) == 2:
+            for tid in range(len(datatmp)):
+                for lid in range(len(datatmp[0])):
+                    datatmp[tid][lid] *= emistmp[tid][lid]
+        elif len(datatmp.shape) == 3:
+            for tid in range(len(datatmp)):
+                for yid in range(len(datatmp[0])):
+                    for xid in range(len(datatmp[0][0])):
+                        datatmp[tid][yid][xid] *= emistmp[tid][yid][xid]
         else:
             sys.exit("cannot handle variables with dimensions more than 3 (lon, lat, time or vector, time)")
     else:
@@ -365,7 +391,7 @@ def read_single_var(datanc, varname, tstep, lonr, latr, lpt, lons, lats):
         sys.exit("cannot handle variables with dimensions more than 2 (vector, time)")
     return dataX, timeX, dataY, comment
 
-def read_var(datapath, geopath, varname, tstep, lonr, latr, lpt, fact):
+def read_var(datapath, geopath, varname, tstep, lonr, latr, lpt):
     obsfiles = glob.glob(datapath)
     geofile  = glob.glob(geopath)
     opath, obsfname = ntpath.split(datapath)
@@ -413,17 +439,12 @@ def read_var(datapath, geopath, varname, tstep, lonr, latr, lpt, fact):
                 timeX = np.insert(timeX,len(timeX),T,0)
                 dataY = np.insert(dataY,len(dataY),Y,0)
         datanc.close()
-        if not fact == '1':
-            factor = float(fact)
-            for vid in range(len(dataY)):
-                for tid in range(len(dataY[0])):
-                    dataY[vid][tid] *= factor
-            comment += ', Factor: %s'%(fact)
     return dataX, timeX, dataY, varnames, comment
 
-def gen_figure(inpath, geopath, outpath, varname, screen, tstep, lonr, latr, lpt, fact, colors, styles):
-    dataX, timeX, dataY, varnames, comment = read_var(inpath, geopath, varname, tstep, lonr, latr, lpt, fact)
-    plotpath = outpath+'/timeseries_%s.png' % varname.split(',')[0]
+def gen_figure(inpath, geopath, outpath, screen, tstep, lonr, latr, lpt, colors, styles):
+    varname = "swnet,lwdown,lwup,hflx,evap,gflux,snohf"
+    dataX, timeX, dataY, varnames, comment = read_var(inpath, geopath, varname, tstep, lonr, latr, lpt)
+    plotpath = outpath+'/timeseries_balance.png'
     metadata = {
                 'var': varname
                 }
@@ -434,7 +455,6 @@ if __name__ == "__main__":
     ap.add_argument('-o', '--output', help="path to output directory", default="./")
     ap.add_argument('-i', '--input', help="path to the input file", required=True)
     ap.add_argument('-g', '--geo', help="path to the geographic info file", default="")
-    ap.add_argument('-v', '--variable', help="variable name to plot", required=True)
     ap.add_argument('-s', '--screen', help="no if plot to file", default="yes")
     ap.add_argument('-t', '--tstep', help="time step for plotting", default="0,-1")
     ap.add_argument('-p', '--point', help="location index for plotting", default="")
@@ -442,6 +462,5 @@ if __name__ == "__main__":
     ap.add_argument('-l', '--linestyle', help="line styles", default="")
     ap.add_argument('-lon', '--longitude', help="longitude range for plotting", default="-180,180")
     ap.add_argument('-lat', '--latitude', help="latitude range for plotting", default="-90,90")
-    ap.add_argument('-factor', '--fact', help="factor for units conversion", default="1")
     MyArgs = ap.parse_args()
-    gen_figure(MyArgs.input, MyArgs.geo, MyArgs.output, MyArgs.variable, MyArgs.screen, MyArgs.tstep, MyArgs.longitude, MyArgs.latitude, MyArgs.point, MyArgs.fact,MyArgs.color,MyArgs.linestyle)
+    gen_figure(MyArgs.input, MyArgs.geo, MyArgs.output, MyArgs.screen, MyArgs.tstep, MyArgs.longitude, MyArgs.latitude, MyArgs.point, MyArgs.color, MyArgs.linestyle)
