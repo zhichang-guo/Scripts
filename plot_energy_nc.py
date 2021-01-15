@@ -64,6 +64,8 @@ def plot_time_series(dataX, timeX, dataY, metadata, plotpath, screen, varnames, 
         y = dataY[i]
         c = defaultColors[min(i,len(defaultColors)-1)]
         s = 'solid'
+        if i == len(dataY) - 1:
+            s = 'dotted'
         if len(colors) > i and colors[i] != '':
             c = colors[i]
         if len(styles) > i and styles[i] != '':
@@ -214,6 +216,26 @@ def read_single_var(datanc, varname, tstep, lonr, latr, lpt, lons, lats):
                         datatmp[tid][yid][xid] *= 1. - albtmp[tid][yid][xid]
         else:
             sys.exit("cannot handle variables with dimensions more than 3 (lon, lat, time or vector, time)")
+    elif varname.lower() == 'rnet':
+        emiss   = datanc.variables['sfcemis'][:]
+        tsfc    = datanc.variables['tsurf'][:]
+        swdown  = datanc.variables['dswsfc'][:]
+        sfcalb  = datanc.variables['sfalb'][:]
+        datatmp = datanc.variables['dlwflx'][:]
+        if len(datatmp.shape) == 1:
+            for lid in range(len(datatmp)):
+                datatmp[lid] = (datatmp[lid]-sigma*pow(tsfc[lid],4))*emiss[lid]+(1.-sfcalb[lid])*swdown[lid]
+        elif len(datatmp.shape) == 2:
+            for tid in range(len(datatmp)):
+                for lid in range(len(datatmp[0])):
+                    datatmp[tid][lid] = (datatmp[tid][lid]-sigma*pow(tsfc[tid][lid],4))*emiss[tid][lid]+(1.-sfcalb[tid][lid])*swdown[tid][lid]
+        elif len(datatmp.shape) == 3:
+            for tid in range(len(datatmp)):
+                for yid in range(len(datatmp[0])):
+                    for xid in range(len(datatmp[0][0])):
+                        datatmp[tid][yid][xid] = (datatmp[tid][yid][xid]-sigma*pow(tsfc[tid][yid][xid],4))*emiss[tid][yid][xid]+(1.-sfcalb[tid][yid][xid])*swdown[tid][yid][xid]
+        else:
+            sys.exit("cannot handle variables with dimensions more than 3 (lon, lat, time or vector, time)")
     elif varname.lower() == 'lwup':
         emistmp = datanc.variables['sfcemis'][:]
         datatmp = datanc.variables['tsurf'][:]
@@ -246,6 +268,40 @@ def read_single_var(datanc, varname, tstep, lonr, latr, lpt, lons, lats):
                 for yid in range(len(datatmp[0])):
                     for xid in range(len(datatmp[0][0])):
                         datatmp[tid][yid][xid] *= emistmp[tid][yid][xid]
+        else:
+            sys.exit("cannot handle variables with dimensions more than 3 (lon, lat, time or vector, time)")
+    elif '-' == varname[0] and not '-' in varname[1:]:
+        datatmp = datanc.variables[varname[1:]][:]
+        if len(datatmp.shape) == 1:
+            for lid in range(len(datatmp)):
+                datatmp[lid] = -datatmp[lid]
+        elif len(datatmp.shape) == 2:
+            for tid in range(len(datatmp)):
+                for lid in range(len(datatmp[0])):
+                    datatmp[tid][lid] = -datatmp[tid][lid]
+        elif len(datatmp.shape) == 3:
+            for tid in range(len(datatmp)):
+                for yid in range(len(datatmp[0])):
+                    for xid in range(len(datatmp[0][0])):
+                        datatmp[tid][yid][xid] = -datatmp[tid][yid][xid]
+        else:
+            sys.exit("cannot handle variables with dimensions more than 3 (lon, lat, time or vector, time)")
+    elif '-' in varname:
+        varnames = varname.split('-')
+        datatmp = datanc.variables[varnames[0]][:]
+        datatmp2 = datanc.variables[varnames[1]][:]
+        if len(datatmp.shape) == 1:
+            for lid in range(len(datatmp)):
+                datatmp[lid] -= datatmp2[lid]
+        elif len(datatmp.shape) == 2:
+            for tid in range(len(datatmp)):
+                for lid in range(len(datatmp[0])):
+                    datatmp[tid][lid] -= datatmp2[tid][lid]
+        elif len(datatmp.shape) == 3:
+            for tid in range(len(datatmp)):
+                for yid in range(len(datatmp[0])):
+                    for xid in range(len(datatmp[0][0])):
+                        datatmp[tid][yid][xid] -= datatmp2[tid][yid][xid]
         else:
             sys.exit("cannot handle variables with dimensions more than 3 (lon, lat, time or vector, time)")
     else:
@@ -441,8 +497,11 @@ def read_var(datapath, geopath, varname, tstep, lonr, latr, lpt):
         datanc.close()
     return dataX, timeX, dataY, varnames, comment
 
-def gen_figure(inpath, geopath, outpath, screen, tstep, lonr, latr, lpt, colors, styles):
-    varname = "swnet,lwdown,lwup,hflx,evap,gflux,snohf"
+#def gen_figure(inpath, geopath, outpath, screen, tstep, lonr, latr, lpt, colors, styles):
+def gen_figure(inpath, geopath, outpath, screen, tstep, lonr, latr, lpt, varname, colors, styles):
+#   varname = "swnet,lwdown,lwup,hflx,evap,gflux,snohf"
+#   varname = "Rnet,hflx,evap,gflux,snohf"
+#   varname = "Rnet,-hflx,-evap,gflux,snohf"
     dataX, timeX, dataY, varnames, comment = read_var(inpath, geopath, varname, tstep, lonr, latr, lpt)
     plotpath = outpath+'/timeseries_balance.png'
     metadata = {
@@ -458,9 +517,11 @@ if __name__ == "__main__":
     ap.add_argument('-s', '--screen', help="no if plot to file", default="yes")
     ap.add_argument('-t', '--tstep', help="time step for plotting", default="0,-1")
     ap.add_argument('-p', '--point', help="location index for plotting", default="")
+    ap.add_argument('-v', '--variable', help="variable name to plot", default="Rnet,-hflx,-evap,gflux,snohf")
     ap.add_argument('-c', '--color', help="color for lines", default="")
     ap.add_argument('-l', '--linestyle', help="line styles", default="")
     ap.add_argument('-lon', '--longitude', help="longitude range for plotting", default="-180,180")
     ap.add_argument('-lat', '--latitude', help="latitude range for plotting", default="-90,90")
     MyArgs = ap.parse_args()
-    gen_figure(MyArgs.input, MyArgs.geo, MyArgs.output, MyArgs.screen, MyArgs.tstep, MyArgs.longitude, MyArgs.latitude, MyArgs.point, MyArgs.color, MyArgs.linestyle)
+    gen_figure(MyArgs.input, MyArgs.geo, MyArgs.output, MyArgs.screen, MyArgs.tstep, MyArgs.longitude, MyArgs.latitude, MyArgs.point, MyArgs.variable, MyArgs.color, MyArgs.linestyle)
+#   gen_figure(MyArgs.input, MyArgs.geo, MyArgs.output, MyArgs.screen, MyArgs.tstep, MyArgs.longitude, MyArgs.latitude, MyArgs.point, MyArgs.color, MyArgs.linestyle)
