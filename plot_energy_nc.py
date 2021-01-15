@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 ###############################################################################################
 ## plot time series of energy balance terms stored in netcdf files, examples:
+##   Note: the code is not generic!
 ##   1. python plot_energy_nc.py -i file_name.nc
 ##      1D variable is assumed to be time-dependent. The code draws time series of all terms.
 ##      2D(vector,time) variable, it draws time series of all terms averaged over all points.
@@ -19,6 +20,7 @@
 ##   5. python plot_energy_nc.py -i file.nc -v Rnet,hflx,evap,gflux,snohf -l dotted,,,,,dashed
 ##      The code will draw the time series of each budget term, with Rnet line dotted and
 ##      residual line dashed. Also can use "-v swnet,lwdown,lwup,hflx,evap,gflux,snohf"
+##      default setting: "-v Rnet,-hflx,-evap,gflux,snohf"
 ##   6. python plot_energy_nc.py -i data_name.nc -p point_index -s no
 ##      The code draws the time series and output it to a png file.
 ## Author: Zhichang Guo, email: Zhichang.Guo@noaa.gov
