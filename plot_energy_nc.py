@@ -16,7 +16,10 @@
 ##   4. python plot_energy_nc.py -i data_name.nc -lon lon1,lon2 -lat lat1,lat2
 ##      The code will average the variables over the domain (lon1,lon2),(lat1,lat2) and draw
 ##      the time series
-##   5. python plot_energy_nc.py -i data_name.nc -v vname -p point_index -s no
+##   5. python plot_energy_nc.py -i file.nc -v Rnet,hflx,evap,gflux,snohf -l dotted,,,,,dashed
+##      The code will draw the time series of each budget term, with Rnet line dotted and
+##      residual line dashed. Also can use "-v swnet,lwdown,lwup,hflx,evap,gflux,snohf"
+##   6. python plot_energy_nc.py -i data_name.nc -p point_index -s no
 ##      The code draws the time series and output it to a png file.
 ## Author: Zhichang Guo, email: Zhichang.Guo@noaa.gov
 ###############################################################################################
