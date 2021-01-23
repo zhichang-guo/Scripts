@@ -1,12 +1,12 @@
 #!/usr/bin/python
-#################################################################################################
+######################################################################################
 ## Compare two directories, examples:
 ##   1. python compare_two_directories.py dirA DirB false
 ##      compare two directories and find those different files
 ##   2. python compare_two_directories.py dirA DirB true
 ##      compare two directories, find those different files, and compare each file
 ## Author: Zhichang Guo, email: Zhichang.Guo@noaa.gov
-###############################################################################################
+######################################################################################
 import os
 import sys
 import getopt
