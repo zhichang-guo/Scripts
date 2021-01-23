@@ -18,7 +18,7 @@ import sys
 import os
 import shutil
 
-def add_variable(inpath, outpath, varname, dname, group, unit, constant):
+def rename_variable(inpath, outpath, varname, newname):
     if not os.path.isfile(inpath):
         sys.exit("The input file \""+inpath+"\" is not found")
     if not outpath == '' and not outpath == inpath:
@@ -33,53 +33,25 @@ def add_variable(inpath, outpath, varname, dname, group, unit, constant):
     else:
         filepath = inpath
     rootgrp = Dataset(filepath, "a")
-    if not dname in rootgrp.dimensions:
-        sys.exit("Error: "+dname+" is not in dimension list")
-    dobject = rootgrp.dimensions[dname]
-    dsize = len(dobject)
-    newgrp = rootgrp
-    if not group == '':
-        if group in rootgrp.groups:
-            newgrp = rootgrp.groups[group]
-        else:
-            newgrp = rootgrp.createGroup(group)
     varnames = varname.split(',')
-    units = unit.split(',')
-    constants = constant.split(',')
-    print("The following variable will be added to the file "+filepath)
+    newnames = newname.split(',')
+    if not len(varnames) == len(newnames):
+        sys.exit("The numbers of old names and new names do not match!")
+    print("The following variable in the file \""+ filepath + "\" will be renamed")
     for vid in range(len(varnames)):
-        if varnames[vid] in newgrp.variables.keys():
-            print("***************************************************************************************")
-            print("Error: Failed to insert the variable "+varnames[vid]+" since it is already in the file")
-            print("***************************************************************************************")
-            sys.exit()
-        var = newgrp.createVariable(varnames[vid], "f4", (dname))
-        comment = "    name: "+varnames[vid]+", dimension: "+dname
-        unit = ''
-        if vid < len(units) and not units[vid] == '':
-            comment += ", units: "+units[vid]
-            var.units = units[vid]
-        const = ''
-        if vid < len(constants) and not constants[vid] == '':
-            comment += ", value: "+constants[vid]
-            const = constants[vid]
-        else:
-            comment += ", value: 0.0"
-        data = np.zeros(dsize)
-        if not const == '':
-            data[:] = float(const)
-        var[:] = data[:]    
-        print(comment)
+        if not varnames[vid] in rootgrp.variables.keys():
+            sys.exit("The variable \"" + varnames[vid] + "\" is not found in the file \""+filepath+"\"")
+        if newnames[vid] in rootgrp.variables.keys():
+            sys.exit("The target variable name \"" + newnames[vid] + "\" already exists in the file \""+filepath+"\"")
+        rootgrp.renameVariable(varnames[vid],newnames[vid])
+        print("    " + varnames[vid] + " ---> " + newnames[vid])
     rootgrp.close()
     print("The script ended normally!")
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
     ap.add_argument('-i', '--input', help="path to the input file", required=True)
     ap.add_argument('-o', '--output', help="path to the output file", default='')
-    ap.add_argument('-v', '--variable', help="variable name to add", required=True)
-    ap.add_argument('-d', '--dimension', help="dimension name for the variable", required=True)
-    ap.add_argument('-g', '--group',  help="group name", default='')
-    ap.add_argument('-u', '--unit', help="units", default='')
-    ap.add_argument('-c', '--constant', help="initial constant value for the variable", default='')
+    ap.add_argument('-v', '--variable', help="old variable name", required=True)
+    ap.add_argument('-n', '--new', help="new variable name", required=True)
     MyArgs = ap.parse_args()
-    add_variable(MyArgs.input, MyArgs.output, MyArgs.variable, MyArgs.dimension, MyArgs.group, MyArgs.unit, MyArgs.constant)
+    rename_variable(MyArgs.input, MyArgs.output, MyArgs.variable, MyArgs.new)
