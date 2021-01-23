@@ -1,14 +1,11 @@
 #!/usr/bin/env python3
 ######################################################################################################
-## Add new variables into an exising netcdf file with constant values, examples:
-##   1. python add_variable_nc.py -i file.nc -v temperatureAir@ObsError,temperatureAir@PreQC -d nlocs
-##      Two vaiables temperatureAir@ObsError and temperatureAir@PreQC are added to the NetCDF file 
-##      file.nc with dimension nlocs and default value zero
-##   2. python add_variable_nc.py -i file.nc -v a,b -d nlocs -u m,K -c 0.1,300
-##      Two vaiables a and b are added to the file with units m and K, values 0.1 and 300 respectively
-##   3. python add_variable_nc.py -i in.nc -o out.nc -v a,b -d nlocs -u m,K -c 0.1,300
-##      The input file (in.nc) is duplicated to a new file (out.nc) and two vaiables a,b are added
-##      to the new file with units m and K, values 0.1 and 300 respectively
+## Rename variables in an exising netcdf file, examples:
+##   1. python rename_variable_nc.py -i file.nc -v temperatureAir -n temperatureAir@ObsError
+##      The vaiable temperatureAir is renamed to temperatureAir@ObsError in the file "file.nc"
+##   2. python rename_variable_nc.py -i in.nc -o out.nc -v temperatureAir -n temperatureAir@ObsError
+##      The input file "in.nc" is duplicated to a new file "out.nc" and the vaiable "temperatureAir"
+##      is renamed to the new variable "temperatureAir@ObsError" in the new file
 ## Author: Zhichang Guo, email: Zhichang.Guo@noaa.gov
 ######################################################################################################
 from netCDF4 import Dataset
