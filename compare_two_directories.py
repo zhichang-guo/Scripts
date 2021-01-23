@@ -22,9 +22,7 @@ def print_diff_files(dcmp, flag):
             count += 1
             print("    "+str(count) + ": "+name)
             if flag.upper() == 'TRUE':
-                #fileA = dcmp.left+"/"+name
                 fileA = glob.glob(os.path.join(dcmp.left,name))
-                #fileB = dcmp.right+"/"+name
                 fileB = glob.glob(os.path.join(dcmp.right,name))
                 cmd = "diff "+str(fileA[0])+" "+str(fileB[0])
                 print(os.system(cmd))
