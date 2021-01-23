@@ -1,24 +1,32 @@
 #!/usr/bin/env python3
-#####################################################################################################
+######################################################################################################
 ## Add new variables into an exising netcdf file with constant values, examples:
 ##   1. python add_variable_nc.py -i file.nc -v temperatureAir@ObsError,temperatureAir@PreQC -d nlocs
-##      two vaiables temperatureAir@ObsError and temperatureAir@PreQC are added to the file with 
-##      dimension nlocs and default value zero
+##      Two vaiables temperatureAir@ObsError and temperatureAir@PreQC are added to the NetCDF file 
+##      file.nc with dimension nlocs and default value zero
 ##   2. python add_variable_nc.py -i file.nc -v a,b -d nlocs -u m,K -c 0.1,300
-##      two vaiables are added to the file with units m and K, values 0.1 and 300 respectively
+##      Two vaiables a and b are added to the file with units m and K, values 0.1 and 300 respectively
 ##   3. python add_variable_nc.py -i in.nc -o out.nc -v a,b -d nlocs -u m,K -c 0.1,300
 ##      The input file (in.nc) is duplicated to a new file (out.nc) and two vaiables a,b are added
 ##      to the new file with units m and K, values 0.1 and 300 respectively
 ## Author: Zhichang Guo, email: Zhichang.Guo@noaa.gov
-#####################################################################################################
+######################################################################################################
 from netCDF4 import Dataset
 import argparse
 import numpy as np
 import sys
+import os
 import shutil
 
 def add_variable(inpath, outpath, varname, dname, group, unit, constant):
+    if not os.path.isfile(inpath):
+        sys.exit("The input file \""+inpath+"\" is not found")
     if not outpath == '' and not outpath == inpath:
+        if os.path.isfile(outpath):
+            print("\""+ outpath + "\" already exists. Input 'Y' if you want to replace it, otherwise input 'N'")
+            answer = input("Input your choice: \n")
+            if not 'Y' in answer.upper():
+                sys.exit("Action Canceled")
         filepath = outpath
         shutil.copy(inpath, filepath)
         print("The file "+inpath+" is copied to "+outpath)
@@ -41,9 +49,10 @@ def add_variable(inpath, outpath, varname, dname, group, unit, constant):
     print("The follow variable will be added to the file "+filepath)
     for vid in range(len(varnames)):
         if varnames[vid] in newgrp.variables.keys():
-            print("***********************************8***************************************************")
+            print("***************************************************************************************")
             print("Error: Failed to insert the variable "+varnames[vid]+" since it is already in the file")
-            sys.exit("*****************************************************8*********************************")
+            print("***************************************************************************************")
+            sys.exit()
         var = newgrp.createVariable(varnames[vid], "f4", (dname))
         comment = "    name: "+varnames[vid]+", dimension: "+dname
         unit = ''
