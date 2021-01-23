@@ -2,11 +2,15 @@
 #####################################################################################################
 ## Add new variables into an exising netcdf file with constant values, examples:
 ##   1. python add_variable_nc.py -i file.nc -v temperatureAir@ObsError,temperatureAir@PreQC -d nlocs
-##      two vaiables are added into the file with dimension nlocs and default value zero
+##      two vaiables temperatureAir@ObsError and temperatureAir@PreQC are added to the file with 
+##      dimension nlocs and default value zero
 ##   2. python add_variable_nc.py -i file.nc -v a,b -d nlocs -u m,K -c 0.1,300
-##      two vaiables are added into the file with units m and K, values 0.1 and 300 respectively
+##      two vaiables are added to the file with units m and K, values 0.1 and 300 respectively
+##   3. python add_variable_nc.py -i in.nc -o out.nc -v a,b -d nlocs -u m,K -c 0.1,300
+##      The input file (in.nc) is duplicated to a new file (out.nc) and two vaiables a,b are added
+##      to the new file with units m and K, values 0.1 and 300 respectively
 ## Author: Zhichang Guo, email: Zhichang.Guo@noaa.gov
-###################################################################################################
+#####################################################################################################
 from netCDF4 import Dataset
 import argparse
 import numpy as np
