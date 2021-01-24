@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 ######################################################################################################
-## Add new variables into an exising netcdf file with constant values, examples:
+## Add new variables to an exising netcdf file with constant values, examples:
 ##   1. python add_variable_nc.py -i file.nc -v temperatureAir@ObsError,temperatureAir@PreQC -d nlocs
 ##      Two vaiables temperatureAir@ObsError and temperatureAir@PreQC are added to the NetCDF file 
 ##      file.nc with dimension nlocs and default value zero
