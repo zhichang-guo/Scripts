@@ -5,7 +5,7 @@
 ##      The vaiable temperatureAir is renamed to temperatureAir@ObsError in the file "file.nc"
 ##   2. python rename_variable_nc.py -i in.nc -o out.nc -v temperatureAir -n temperatureAir@ObsError
 ##      The input file "in.nc" is duplicated to a new file "out.nc" and the vaiable "temperatureAir"
-##      is renamed to the new variable "temperatureAir@ObsError" in the new file
+##      is renamed to the new variable "temperatureAir@ObsError" in that file
 ## Author: Zhichang Guo, email: Zhichang.Guo@noaa.gov
 ######################################################################################################
 from netCDF4 import Dataset
