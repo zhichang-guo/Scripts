@@ -23,7 +23,7 @@ def add_variable(inpath, outpath, varname, dname, group, unit, constant):
         sys.exit("The input file \""+inpath+"\" is not found")
     if not outpath == '' and not outpath == inpath:
         if os.path.isfile(outpath):
-            print("\""+ outpath + "\" already exists. Input 'Y' if you want to replace it, otherwise input 'N'")
+            print("\""+ outpath + "\" already exists. Input 'y' if you want to replace it, otherwise input 'n'")
             answer = input("Input your choice: \n")
             if not 'Y' in answer.upper():
                 sys.exit("Action Canceled")
