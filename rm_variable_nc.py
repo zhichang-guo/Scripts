@@ -18,7 +18,7 @@ def rm_variable(inpath, outpath, varname):
     filepath = outpath
     if not outpath == '' or outpath == inpath:
         if os.path.isfile(outpath):
-            print("The output file is existing or same to the input file.")
+            print("The output file \""+outpath+"\" is existing or same to the input file \""+inpath+"\"")
             answer = input("Input a file name: \n")
             while not answer or answer == inpath or os.path.isfile(answer):
                 print("The file \"" + answer + "\" is existing or same to the input file.")
