@@ -2,8 +2,8 @@
 ######################################################################################################
 ## Copy variables from one netcdf file to another
 ##     Usage: python copy_variable_nc.py -s source.nc -t target.nc -v varname
-##     The vaiable "varname" from the source file "source.nc" is copied to the target file "target.nc"
-##     It is assumed that the dimensions for "varname" exist in the target file.
+##     The vaiable "varname" ic copied from the source file "source.nc" to the target file "target.nc"
+##     assuming that the dimensions for "varname" exist in the target file.
 ## Author: Zhichang Guo, email: Zhichang.Guo@noaa.gov
 ######################################################################################################
 from netCDF4 import Dataset
