@@ -43,6 +43,6 @@ if __name__ == "__main__":
     ap = argparse.ArgumentParser()
     ap.add_argument('-i', '--input', help="path to the input file", required=True)
     ap.add_argument('-o', '--output', help="path to the output file", required=True)
-    ap.add_argument('-v', '--variable', help="old variable name", required=True)
+    ap.add_argument('-v', '--variable', help="variable name", required=True)
     MyArgs = ap.parse_args()
     rm_variable(MyArgs.input, MyArgs.output, MyArgs.variable)
