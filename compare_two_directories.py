@@ -20,12 +20,15 @@ def print_diff_files(dcmp, flag):
         print("Following files are found in both directories and they are different:")
         for name in dcmp.diff_files:
             count += 1
+            print("-------------------")
             print("    "+str(count) + ": "+name)
             if flag.upper() == 'TRUE':
                 fileA = glob.glob(os.path.join(dcmp.left,name))
                 fileB = glob.glob(os.path.join(dcmp.right,name))
                 cmd = "diff "+str(fileA[0])+" "+str(fileB[0])
-                print(os.system(cmd))
+                print("Command: "+cmd)
+                result = os.popen(cmd).read()
+                print(result)
     if len(dcmp.common_files) > 0:
         print("*********************************************************************")
         print("Following files are found in both directories and they are identical:")
