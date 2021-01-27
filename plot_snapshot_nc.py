@@ -15,6 +15,9 @@
 ##      specified in one file.
 ##   4. python plot_snapshot_nc.py -i data.nc -g geo.nc -v vname -s no -t 128
 ##      The code makes a geographical plot for the time step 128 and output it to a png file.
+##   5. python plot_snapshot_nc.py -i data.nc -g geo.nc -v vname -llvn lon,lat
+##      The code makes a geographical plot using "lon" and "lat" as the longitude and latitude
+##      variable names.
 ## Author: Zhichang Guo, email: Zhichang.Guo@noaa.gov
 ###############################################################################################
 import matplotlib
@@ -123,7 +126,7 @@ def plot_world_map(lons, lats, data, metadata, plotpath, screen, lonr, latr, com
     else:
         plt.show()
 
-def read_var(datapath, geopath, varname, tstep, fov, fact):
+def read_var(datapath, geopath, varname, tstep, fov, llvn, fact):
     obsfiles = glob.glob(datapath)
     geofile  = glob.glob(geopath)
     opath, obsfname = ntpath.split(datapath)
@@ -138,22 +141,23 @@ def read_var(datapath, geopath, varname, tstep, fov, fact):
         geofile_new = np.append(geofile_new, [os.path.join(opath,geofname)])
     elif opath == '' and gpath != '':
         obsfiles_new = glob.glob(os.path.join(gpath,datapath))
+    llvns = llvn.split(',')
     lats = np.array([])
     lons = np.array([])
     data = np.array([])
     if not geopath == "":
         for g in geofile_new:
             geonc = nc.Dataset(g)
-            lattmp = geonc.variables['latitude'][:]
-            lontmp = geonc.variables['longitude'][:]
+            lontmp = geonc.variables[llvns[0]][:]
+            lattmp = geonc.variables[llvns[1]][:]
             lats = np.concatenate((lats,lattmp))
             lons = np.concatenate((lons,lontmp))
             geonc.close()
     for f in obsfiles_new:
         datanc = nc.Dataset(f)
         if geopath == "":
-            lattmp = datanc.variables['latitude'][:]
-            lontmp = datanc.variables['longitude'][:]
+            lontmp = datanc.variables[llvns[0]][:]
+            lattmp = datanc.variables[llvns[1]][:]
             lats = np.concatenate((lats,lattmp))
             lons = np.concatenate((lons,lontmp))
         if '-' in varname:
@@ -275,9 +279,9 @@ def read_var(datapath, geopath, varname, tstep, fov, fact):
             comment += '; Factor: %s'%(fact)
     return data, lons, lats, comment
 
-def gen_figure(inpath, geopath, outpath, varname, screen, tstep, fov, lonr, latr, fact):
+def gen_figure(inpath, geopath, outpath, varname, screen, tstep, fov, llvn, lonr, latr, fact):
     # read the files to get the 2D array to plot
-    data, lons, lats, comment = read_var(inpath, geopath, varname, tstep, fov, fact)
+    data, lons, lats, comment = read_var(inpath, geopath, varname, tstep, fov, llvn, fact)
     plotpath = outpath+'/%s.png' % (varname)
     metadata = {
                 'var': varname
@@ -295,6 +299,7 @@ if __name__ == "__main__":
     ap.add_argument('-f', '--fov', help="field or vector data", default="vector")
     ap.add_argument('-lon', '--longitude', help="longitude range for plotting", default="-180,180")
     ap.add_argument('-lat', '--latitude', help="latitude range for plotting", default="-90,90")
+    ap.add_argument('-llvn', '--llvname', help="lonitude/latitude variable name", default="longitude,latitude")
     ap.add_argument('-factor', '--fact', help="factor for units conversion", default="1")
     MyArgs = ap.parse_args()
-    gen_figure(MyArgs.input, MyArgs.geo, MyArgs.output, MyArgs.variable, MyArgs.screen, MyArgs.tstep, MyArgs.fov, MyArgs.longitude, MyArgs.latitude, MyArgs.fact)
+    gen_figure(MyArgs.input, MyArgs.geo, MyArgs.output, MyArgs.variable, MyArgs.screen, MyArgs.tstep, MyArgs.fov, MyArgs.llvname, MyArgs.longitude, MyArgs.latitude, MyArgs.fact)
