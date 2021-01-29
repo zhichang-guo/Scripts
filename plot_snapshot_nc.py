@@ -18,8 +18,10 @@
 ##   5. python plot_snapshot_nc.py -i data.nc -g geo.nc -v vname -llvn lon,lat
 ##      The code makes a geographical plot using "lon" and "lat" as the longitude and latitude
 ##      variable names.
+##   6. python plot_snapshot_nc.py -i file -v vname
+##      The code makes a geographical plot with data stored in multiple netcdf files (file*.nc*)
 ## Author: Zhichang Guo, email: Zhichang.Guo@noaa.gov
-###############################################################################################
+#################################################################################################
 import matplotlib
 import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
@@ -127,12 +129,16 @@ def plot_world_map(lons, lats, data, metadata, plotpath, screen, lonr, latr, com
         plt.show()
 
 def read_var(datapath, geopath, varname, tstep, fov, llvn, fact):
+    file_name, file_extension = os.path.splitext(datapath)
     obsfiles = glob.glob(datapath)
+    if not 'nc' in file_extension:
+        obsfiles = glob.glob(datapath+'*')
     geofile  = glob.glob(geopath)
     opath, obsfname = ntpath.split(datapath)
     gpath, geofname = ntpath.split(geopath)
     geofile_new  = geofile
     obsfiles_new = obsfiles
+    comment = ''
     if opath == '' and gpath == '':
         cpath = os.getcwd()
         obsfiles_new = glob.glob(os.path.join(cpath,datapath))
