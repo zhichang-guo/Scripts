@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
-#################################################################################################
+###################################################################################################
 ## Create a plot on a map with irregularly spaced data stored in netcdf files, examples:
 ##   1. python plot_snapshot_nc.py -i file_name.nc -v vname 
 ##      1D variable is assumed to be stationary vector data. Also assume lon/lat and the variable
-##      can be found in the same file. For 2D(vector,time) and 3D(lon,lat,time) variable, the 
-##      code creates a geographical plot with data averaged over the time domain.
+##      can be found in the same file. For 2D(vector,time), 2D(lon,lat), 3D(lon,lat,time), 
+##      3D(vector,level,time), 4D(lon,lat,lev,time) variable, the code creates a geographical plot
+##      with data averaged over the time domain.
 ##   2. python plot_snapshot_nc.py -i data_name.nc -v vname1-vname2 -t 2,-3 -factor 86400
 ##      Make a graphical plot of difference, multiplied by 86400, between vname1 and vname2 and
 ##      averaged over the time segment from the second record to the third last record.
@@ -20,8 +21,13 @@
 ##      variable names.
 ##   6. python plot_snapshot_nc.py -i file -v vname
 ##      The code makes a geographical plot with data stored in multiple netcdf files (file*.nc*)
+##   7. python plot_snapshot_nc.py -i file -v vname -f samefield -r radian
+##      The code makes a geographical plot assuming lon and lat having the same format with data 
+##      stored in netcdf files (x-axis,y-axis,tiles) and lon/lat is in radian
+##   8. python plot_snapshot_nc.py -i file -v vname -f samefield -r radian -z 2
+##      The code makes a geographical plot at the vertical level 2 (starting from 0)
 ## Author: Zhichang Guo, email: Zhichang.Guo@noaa.gov
-#################################################################################################
+###################################################################################################
 import matplotlib
 import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
@@ -79,18 +85,21 @@ def tstepS2I(strTStep, tds):
         tstepBeg = int(tsteps[0])
         tstepEnd = int(tsteps[1])
         if tstepBeg < 0:
-            tstepBeg += tds + 1
+            tstepBeg += tds
         if tstepEnd < 0:
-            tstepEnd += tds + 1
-        tstepBeg = min(tstepBeg,tds)
-        tstepEnd = min(tstepEnd,tds)
+            tstepEnd += tds
+        tstepBeg = max(0,min(tstepBeg,tds-1))
+        tstepEnd = max(0,min(tstepEnd,tds-1))
     else:
         tstepBeg = 0
-        tstepEnd = tds
+        tstepEnd = tds-1
     if tstepBeg > tstepEnd:
         return tstepEnd, tstepBeg
     else:
         return tstepBeg, tstepEnd
+
+def last_6chars(x):
+    return(x[-6:])
 
 def plot_world_map(lons, lats, data, metadata, plotpath, screen, lonr, latr, comment):
     # plot generic world map
@@ -128,38 +137,68 @@ def plot_world_map(lons, lats, data, metadata, plotpath, screen, lonr, latr, com
     else:
         plt.show()
 
-def read_var(datapath, geopath, varname, tstep, fov, llvn, fact):
-    file_name, file_extension = os.path.splitext(datapath)
-    obsfiles = glob.glob(datapath)
-    if not 'nc' in file_extension:
-        obsfiles = glob.glob(datapath+'*')
-    geofile  = glob.glob(geopath)
+def read_var(datapath, geopath, varname, tstep, fov, llvn, fact, radian, level):
+    data_name, data_extension = os.path.splitext(datapath)
+    if not 'nc' in data_extension:
+        datapath += '*'
     opath, obsfname = ntpath.split(datapath)
     gpath, geofname = ntpath.split(geopath)
-    geofile_new  = geofile
-    obsfiles_new = obsfiles
-    comment = ''
     if opath == '' and gpath == '':
         cpath = os.getcwd()
-        obsfiles_new = glob.glob(os.path.join(cpath,datapath))
-        geofile_new = glob.glob(os.path.join(cpath,geofname))
+        obsfiles = glob.glob(os.path.join(cpath,obsfname))
+        geofile  = glob.glob(os.path.join(cpath,geofname))
     elif opath != '' and gpath == '':
-        geofile_new = np.append(geofile_new, [os.path.join(opath,geofname)])
+        obsfiles = glob.glob(datapath)
+        geofile  = glob.glob(os.path.join(opath,geofname))
     elif opath == '' and gpath != '':
-        obsfiles_new = glob.glob(os.path.join(gpath,datapath))
+        obsfiles = glob.glob(os.path.join(gpath,datapath))
+        geofile  = glob.glob(geopath)
+    else:
+        obsfiles = glob.glob(datapath)
+        geofile  = glob.glob(geopath)
+    obsfiles = sorted(obsfiles, key=last_6chars)
+    comment = ''
     llvns = llvn.split(',')
     lats = np.array([])
     lons = np.array([])
     data = np.array([])
+    zid = 0
+    if not level == '':
+        zid = int(level)
     if not geopath == "":
-        for g in geofile_new:
-            geonc = nc.Dataset(g)
-            lontmp = geonc.variables[llvns[0]][:]
-            lattmp = geonc.variables[llvns[1]][:]
-            lats = np.concatenate((lats,lattmp))
-            lons = np.concatenate((lons,lontmp))
-            geonc.close()
-    for f in obsfiles_new:
+        if 'SAME' in fov.upper():
+            for g in geofile:
+                geonc = nc.Dataset(g)
+                lontmp = geonc.variables[llvns[0]][:]
+                lattmp = geonc.variables[llvns[1]][:]
+                dim_ll = len(lontmp.shape)
+                if dim_ll == 3:
+                    tds = len(lontmp)
+                    yds = len(lontmp[0])
+                    xds = len(lontmp[0][0])
+                    lon_new = np.zeros((yds*xds))
+                    lat_new = np.zeros((yds*xds))
+                    for tid in range(tds):
+                        for yid in range(yds):
+                            for xid in range(xds):
+                                lid = yid*xds + xid
+                                lon_new[lid] = lontmp[tid][yid][xid]
+                                lat_new[lid] = lattmp[tid][yid][xid]
+                        lats = np.concatenate((lats,lat_new))
+                        lons = np.concatenate((lons,lon_new))
+                else:
+                    lats = np.concatenate((lats,lattmp))
+                    lons = np.concatenate((lons,lontmp))
+                geonc.close()
+        else:
+            for g in geofile:
+                geonc = nc.Dataset(g)
+                lontmp = geonc.variables[llvns[0]][:]
+                lattmp = geonc.variables[llvns[1]][:]
+                lats = np.concatenate((lats,lattmp))
+                lons = np.concatenate((lons,lontmp))
+                geonc.close()
+    for f in obsfiles:
         datanc = nc.Dataset(f)
         if geopath == "":
             lontmp = datanc.variables[llvns[0]][:]
@@ -182,8 +221,17 @@ def read_var(datapath, geopath, varname, tstep, fov, llvn, fact):
                     for yid in range(len(datatmp[0])):
                         for xid in range(len(datatmp[0][0])):
                             datatmp[tid][yid][xid] -= datatmp2[tid][yid][xid]
+            elif len(datatmp.shape) == 4:
+                for tid in range(len(datatmp)):
+                    for zid in range(len(datatmp[0])):
+                        for yid in range(len(datatmp[0][0])):
+                            for xid in range(len(datatmp[0][0][0])):
+                                datatmp[tid][zid][yid][xid] -= datatmp2[tid][zid][yid][xid]
             else:
-                sys.exit("cannot handle variables with dimensions more than 3 (lon,lat,time or vector,time or time)")
+                error_msg = "Error: cannot handle variables with dimensions more than 4 ("
+                error_msg += "4D: lon,lat,lev,time; 3D: lon,lat,time; 3D: vector,lev,time; "
+                error_msg += "2D: lon,lat; 2D: vector,time: 1D: vector)"
+                sys.exit(error_msg)
         else:
             datatmp = datanc.variables[varname][:]
         datanc.close()
@@ -193,101 +241,162 @@ def read_var(datapath, geopath, varname, tstep, fov, llvn, fact):
             comment = ''
         elif dims == 2:
             if 'VECTOR' in fov.upper():
-                tds = len(datatmp) - 1
+                tds = len(datatmp)
                 lds = len(datatmp[0])
                 if ',' in tstep:
                     tstepBeg, tstepEnd = tstepS2I(tstep, tds)
                     tsteps = tstepEnd - tstepBeg + 1
-                    data = np.zeros(lds)
+                    data_new = np.zeros(lds)
                     for lid in range(lds):
                         cnt = 0.0
                         for i in range(tsteps):
                             tid = i + tstepBeg
-                            data[lid] += datatmp[tid][lid]
+                            data_new[lid] += datatmp[tid][lid]
                             cnt += 1.0
                         if cnt > 0.5:
-                            data[lid] /= cnt
+                            data_new[lid] /= cnt
                         else:
-                            data[lid] = -999999.99
+                            data_new[lid] = np.nan
+                    data = np.concatenate((data,data_new))
                     comment = 'Time average: %s - %s' % (str(tstepBeg), str(tstepEnd))
                 else:
                     timestep = int(tstep)
                     if timestep < 0:
                         timestep += len(datatmp)
                     timestep = max(timestep,0)
-                    timestep = min(timestep,tds)
+                    timestep = min(timestep,tds-1)
                     data = np.concatenate((data,datatmp[timestep]))
-                    comment = 'Time step: %s of 0 - %s' % (str(timestep), tds)
+                    comment = 'Time step: %s of 0 - %s' % (str(timestep), str(tds-1))
             elif 'FIELD' in fov.upper():
                 yds = len(datatmp)
                 xds = len(datatmp[0])
-                lons_new = np.zeros((yds*xds))
-                lats_new = np.zeros((yds*xds))
                 data_new = np.zeros((yds*xds))
                 for yid in range(yds):
                     for xid in range(xds):
                         lid = yid*xds + xid
-                        lons_new[lid] = lons[xid]
-                        lats_new[lid] = lats[yid]
                         data_new[lid] = datatmp[yid][xid]
-                lons = lons_new
-                lats = lats_new
-                data = data_new
+                data = np.concatenate((data,data_new))
                 comment = 'Stationary Field'
             else:
                 sys.exit("Error: invalid fov option")
         elif dims == 3:
-            tds = len(datatmp) - 1
-            yds = len(datatmp[0])
-            xds = len(datatmp[0][0])
-            if ',' in tstep:
-                tstepBeg, tstepEnd = tstepS2I(tstep, tds)
-                tsteps = tstepEnd - tstepBeg + 1
-                data = np.zeros((yds,xds))
-                for yid in range(yds):
-                    for xid in range(xds):
+            if 'VECTOR' in fov.upper():
+                tds = len(datatmp)
+                zds = len(datatmp[0])
+                lds = len(datatmp[0][0])
+                zid = max(0,min(zid,zds-1))
+                if ',' in tstep:
+                    tstepBeg, tstepEnd = tstepS2I(tstep, tds)
+                    tsteps = tstepEnd - tstepBeg + 1
+                    data_new = np.zeros(lds)
+                    for lid in range(lds):
                         cnt = 0.0
                         for i in range(tsteps):
                             tid = i + tstepBeg
-                            data[yid][xid] += datatmp[tid][yid][xid]
+                            data_new[lid] += datatmp[tid][zid][lid]
                             cnt += 1.0
                         if cnt > 0.5:
-                            data[yid][xid] /= cnt
+                            data_new[lid] /= cnt
                         else:
-                            data[yid][xid] = -999999.99
-                comment = 'Time average: %s - %s' % (str(tstepBeg), str(tstepEnd))
+                            data_new[lid] = np.nan
+                    data = np.concatenate((data,data_new))
+                    comment = 'Time average: %s - %s; Level: %s' % (str(tstepBeg), str(tstepEnd), str(sid))
+                else:
+                    timestep = int(tstep)
+                    if timestep < 0:
+                        timestep += len(datatmp)
+                    timestep = max(timestep,0)
+                    timestep = min(timestep,tds-1)
+                    data = np.concatenate((data,datatmp[timestep][zid]))
+                    comment = 'Time step: %s of 0 - %s; Level: %s' % (str(timestep), str(tds-1), str(zid))
+            elif 'FIELD' in fov.upper():
+                tds = len(datatmp)
+                yds = len(datatmp[0])
+                xds = len(datatmp[0][0])
+                data_new = np.zeros((yds*xds))
+                if ',' in tstep:
+                    tstepBeg, tstepEnd = tstepS2I(tstep, tds)
+                    tsteps = tstepEnd - tstepBeg + 1
+                    for yid in range(yds):
+                        for xid in range(xds):
+                            lid = yid*xds + xid
+                            cnt = 0.0
+                            for i in range(tsteps):
+                                tid = i + tstepBeg
+                                data_new[lid] += datatmp[tid][yid][xid]
+                                cnt += 1.0
+                            if cnt > 0.5:
+                                data_new[lid] /= cnt
+                            else:
+                                data_new[lid] = np.nan
+                    comment = 'Time average: %s - %s' % (str(tstepBeg), str(tstepEnd))
+                else:
+                    timestep = int(tstep)
+                    if timestep < 0:
+                        timestep += len(datatmp)
+                    timestep = max(timestep,0)
+                    timestep = min(timestep,tds-1)
+                    for yid in range(yds):
+                        for xid in range(xds):
+                            lid = yid*xds + xid
+                            data_new[lid] = datatmp[timestep][yid][xid]
+                    comment = 'Time step: %s of 0 - %s' % (str(timestep), str(tds-1))
+                data = np.concatenate((data,data_new))
+            else:
+                sys.exit("Error: invalid fov option")
+        elif dims == 4:
+            tds = len(datatmp)
+            zds = len(datatmp[0])
+            yds = len(datatmp[0][0])
+            xds = len(datatmp[0][0][0])
+            zid = max(0,min(zid,zds-1))
+            data_new = np.zeros((yds*xds))
+            if ',' in tstep:
+                tstepBeg, tstepEnd = tstepS2I(tstep, tds)
+                tsteps = tstepEnd - tstepBeg + 1
+                for yid in range(yds):
+                    for xid in range(xds):
+                        lid = yid*xds + xid
+                        cnt = 0.0
+                        for i in range(tsteps):
+                            tid = i + tstepBeg
+                            data_new[lid] += datatmp[tid][zid][yid][xid]
+                            cnt += 1.0
+                        if cnt > 0.5:
+                            data_new[lid] /= cnt
+                        else:
+                            data_new[lid] = np.nan
+                comment = 'Time average: %s - %s; Level: ' % (str(tstepBeg), str(tstepEnd), str(zid))
             else:
                 timestep = int(tstep)
                 if timestep < 0:
                     timestep += len(datatmp)
                 timestep = max(timestep,0)
-                timestep = min(timestep,tds)
-                data = np.concatenate((data,datatmp[timestep]))
-                comment = 'Time step: %s of 0 - %s' % (str(timestep), tds)
-            lons_new = np.zeros((yds*xds))
-            lats_new = np.zeros((yds*xds))
-            data_new = np.zeros((yds*xds))
-            for yid in range(yds):
-                for xid in range(xds):
-                    lid = yid*xds + xid
-                    lons_new[lid] = lons[xid]
-                    lats_new[lid] = lats[yid]
-                    data_new[lid] = data[yid][xid]
-            lons = lons_new
-            lats = lats_new
-            data = data_new
+                timestep = min(timestep,tds-1)
+                for yid in range(yds):
+                    for xid in range(xds):
+                        lid = yid*xds + xid
+                        data_new[lid] = datatmp[timestep][zid][yid][xid]
+                comment = 'Time step: %s of 0 - %s; Level: %s' % (str(timestep), str(tds-1), str(zid))
+            data = np.concatenate((data,data_new))
         else:
-            sys.exit("cannot handle variables with dimensions more than 2 (vector, time)")
-        if not fact == '1':
-            factor = float(fact)
-            for lid in range(len(data)):
-                data[lid] *= factor
-            comment += '; Factor: %s'%(fact)
+            sys.exit("cannot handle variables with dimensions more than 4")
+    if not fact == '1':
+        factor = float(fact)
+        for lid in range(len(data)):
+            data[lid] *= factor
+        comment += '; Factor: %s'%(fact)
+    if 'RADIAN' in radian.upper():
+        rad2deg = 180.0/3.1415926535
+        for lid in range(len(lons)):
+            lons[lid] *= rad2deg
+        for lid in range(len(lats)):
+            lats[lid] *= rad2deg
     return data, lons, lats, comment
 
-def gen_figure(inpath, geopath, outpath, varname, screen, tstep, fov, llvn, lonr, latr, fact):
+def gen_figure(inpath, geopath, outpath, varname, screen, tstep, fov, llvn, lonr, latr, fact, radian, level):
     # read the files to get the 2D array to plot
-    data, lons, lats, comment = read_var(inpath, geopath, varname, tstep, fov, llvn, fact)
+    data, lons, lats, comment = read_var(inpath, geopath, varname, tstep, fov, llvn, fact, radian, level)
     plotpath = outpath+'/%s.png' % (varname)
     metadata = {
                 'var': varname
@@ -307,5 +416,7 @@ if __name__ == "__main__":
     ap.add_argument('-lat', '--latitude', help="latitude range for plotting", default="-90,90")
     ap.add_argument('-llvn', '--llvname', help="lonitude/latitude variable name", default="longitude,latitude")
     ap.add_argument('-factor', '--fact', help="factor for units conversion", default="1")
+    ap.add_argument('-r', '--radian', help="radian or degree for lon/lat", default="degree")
+    ap.add_argument('-z', '--level', help="vertial level index", default="0")
     MyArgs = ap.parse_args()
-    gen_figure(MyArgs.input, MyArgs.geo, MyArgs.output, MyArgs.variable, MyArgs.screen, MyArgs.tstep, MyArgs.fov, MyArgs.llvname, MyArgs.longitude, MyArgs.latitude, MyArgs.fact)
+    gen_figure(MyArgs.input, MyArgs.geo, MyArgs.output, MyArgs.variable, MyArgs.screen, MyArgs.tstep, MyArgs.fov, MyArgs.llvname, MyArgs.longitude, MyArgs.latitude, MyArgs.fact, MyArgs.radian, MyArgs.level)
