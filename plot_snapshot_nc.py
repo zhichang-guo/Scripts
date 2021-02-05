@@ -173,19 +173,9 @@ def read_var(datapath, geopath, varname, tstep, fov, llvn, fact, radian, level):
                 lattmp = geonc.variables[llvns[1]][:]
                 dim_ll = len(lontmp.shape)
                 if dim_ll == 3:
-                    tds = len(lontmp)
-                    yds = len(lontmp[0])
-                    xds = len(lontmp[0][0])
-                    lon_new = np.zeros((yds*xds))
-                    lat_new = np.zeros((yds*xds))
-                    for tid in range(tds):
-                        for yid in range(yds):
-                            for xid in range(xds):
-                                lid = yid*xds + xid
-                                lon_new[lid] = lontmp[tid][yid][xid]
-                                lat_new[lid] = lattmp[tid][yid][xid]
-                        lats = np.concatenate((lats,lat_new))
-                        lons = np.concatenate((lons,lon_new))
+                    for tid in range(len(lontmp)):
+                        lats = np.concatenate((lats,lattmp[tid].ravel()))
+                        lons = np.concatenate((lons,lontmp[tid].ravel()))
                 else:
                     lats = np.concatenate((lats,lattmp))
                     lons = np.concatenate((lons,lontmp))
@@ -203,35 +193,17 @@ def read_var(datapath, geopath, varname, tstep, fov, llvn, fact, radian, level):
         if geopath == "":
             lontmp = datanc.variables[llvns[0]][:]
             lattmp = datanc.variables[llvns[1]][:]
-            lats = np.concatenate((lats,lattmp))
-            lons = np.concatenate((lons,lontmp))
+            if len(lontmp.shape) == 2:
+                lons = np.concatenate((lons,lontmp.ravel()))
+                lats = np.concatenate((lats,lattmp.ravel()))
+            else:
+                lats = np.concatenate((lats,lattmp))
+                lons = np.concatenate((lons,lontmp))
         if '-' in varname:
             varnames = varname.split('-')
             datatmp = datanc.variables[varnames[0]][:]
             datatmp2 = datanc.variables[varnames[1]][:]
-            if len(datatmp.shape) == 1:
-                for lid in range(len(datatmp)):
-                    datatmp[lid] -= datatmp2[lid]
-            elif len(datatmp.shape) == 2:
-                for tid in range(len(datatmp)):
-                    for lid in range(len(datatmp[0])):
-                        datatmp[tid][lid] -= datatmp2[tid][lid]
-            elif len(datatmp.shape) == 3:
-                for tid in range(len(datatmp)):
-                    for yid in range(len(datatmp[0])):
-                        for xid in range(len(datatmp[0][0])):
-                            datatmp[tid][yid][xid] -= datatmp2[tid][yid][xid]
-            elif len(datatmp.shape) == 4:
-                for tid in range(len(datatmp)):
-                    for zid in range(len(datatmp[0])):
-                        for yid in range(len(datatmp[0][0])):
-                            for xid in range(len(datatmp[0][0][0])):
-                                datatmp[tid][zid][yid][xid] -= datatmp2[tid][zid][yid][xid]
-            else:
-                error_msg = "Error: cannot handle variables with dimensions more than 4 ("
-                error_msg += "4D: lon,lat,lev,time; 3D: lon,lat,time; 3D: vector,lev,time; "
-                error_msg += "2D: lon,lat; 2D: vector,time: 1D: vector)"
-                sys.exit(error_msg)
+            datatmp -= datatmp2
         else:
             datatmp = datanc.variables[varname][:]
         datanc.close()
@@ -268,14 +240,7 @@ def read_var(datapath, geopath, varname, tstep, fov, llvn, fact, radian, level):
                     data = np.concatenate((data,datatmp[timestep]))
                     comment = 'Time step: %s of 0 - %s' % (str(timestep), str(tds-1))
             elif 'FIELD' in fov.upper():
-                yds = len(datatmp)
-                xds = len(datatmp[0])
-                data_new = np.zeros((yds*xds))
-                for yid in range(yds):
-                    for xid in range(xds):
-                        lid = yid*xds + xid
-                        data_new[lid] = datatmp[yid][xid]
-                data = np.concatenate((data,data_new))
+                data = np.concatenate((data,datatmp.ravel()))
                 comment = 'Stationary Field'
             else:
                 sys.exit("Error: invalid fov option")
@@ -336,10 +301,7 @@ def read_var(datapath, geopath, varname, tstep, fov, llvn, fact, radian, level):
                         timestep += len(datatmp)
                     timestep = max(timestep,0)
                     timestep = min(timestep,tds-1)
-                    for yid in range(yds):
-                        for xid in range(xds):
-                            lid = yid*xds + xid
-                            data_new[lid] = datatmp[timestep][yid][xid]
+                    data_new = datatmp[timestep].ravel()
                     comment = 'Time step: %s of 0 - %s' % (str(timestep), str(tds-1))
                 data = np.concatenate((data,data_new))
             else:
@@ -373,10 +335,7 @@ def read_var(datapath, geopath, varname, tstep, fov, llvn, fact, radian, level):
                     timestep += len(datatmp)
                 timestep = max(timestep,0)
                 timestep = min(timestep,tds-1)
-                for yid in range(yds):
-                    for xid in range(xds):
-                        lid = yid*xds + xid
-                        data_new[lid] = datatmp[timestep][zid][yid][xid]
+                data_new = datatmp[timestep][zid].ravel()
                 comment = 'Time step: %s of 0 - %s; Level: %s' % (str(timestep), str(tds-1), str(zid))
             data = np.concatenate((data,data_new))
         else:
