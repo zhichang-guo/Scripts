@@ -138,8 +138,10 @@ def plot_world_map(lons, lats, data, metadata, plotpath, screen, lonr, latr, ext
     cb = plt.colorbar(cs, orientation='horizontal', shrink=0.5, pad=.04)
     cb.set_label(cbarlabel, fontsize=12)
     plt.title(plttitle)
-    if screen.upper() == "NO":
+    if screen.upper() == "NO" or screen.upper() == "ALL":
         plt.savefig(plotpath)
+        if screen.upper() == "ALL":
+            plt.show()
         plt.close('all')
     else:
         plt.show()
