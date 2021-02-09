@@ -204,8 +204,20 @@ def read_var(datapath, geopath, varname, tstep, fov, llvn, fact, radian, level):
                 lons = np.concatenate((lons,lontmp.ravel()))
                 lats = np.concatenate((lats,lattmp.ravel()))
             else:
-                lats = np.concatenate((lats,lattmp))
-                lons = np.concatenate((lons,lontmp))
+                if 'FIELD' in fov.upper():
+                    xds = len(lontmp)
+                    yds = len(lattmp)
+                    lds = xds*yds
+                    lons = np.zeros(lds)
+                    lats = np.zeros(lds)
+                    for j in range(yds):
+                        for i in range(xds):
+                            k = j*xds + i
+                            lons[k] = lontmp[i]
+                            lats[k] = lattmp[j]
+                else:
+                    lats = np.concatenate((lats,lattmp))
+                    lons = np.concatenate((lons,lontmp))
         if '-' in varname:
             varnames = varname.split('-')
             datatmp = datanc.variables[varnames[0]][:]
