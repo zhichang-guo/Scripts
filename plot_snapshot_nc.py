@@ -101,7 +101,7 @@ def tstepS2I(strTStep, tds):
 def last_6chars(x):
     return(x[-6:])
 
-def plot_world_map(lons, lats, data, metadata, plotpath, screen, lonr, latr, comment):
+def plot_world_map(lons, lats, data, metadata, plotpath, screen, lonr, latr, extreme, comment):
     # plot generic world map
     if screen.upper() == "NO":
         matplotlib.use('agg')
@@ -120,6 +120,13 @@ def plot_world_map(lons, lats, data, metadata, plotpath, screen, lonr, latr, com
     ax.set_extent([lonBeg, lonEnd, latBeg, latEnd])
     vmax = np.nanmean(data)+np.nanstd(data)*2
     vmin = np.nanmean(data)-np.nanstd(data)*2
+    if not extreme == '':
+        strMinMax = extreme.split(',')
+        vmin = float(strMinMax[0])
+        vmax = float(strMinMax[1])
+        invalid = np.logical_or(data > vmax, data < vmin)
+        data[invalid] = np.nan
+        data = np.ma.masked_where(np.isnan(data), data)
     cmap = 'viridis'
     cbarlabel = '%s' % (metadata['var'])
     if comment == '':
@@ -353,14 +360,14 @@ def read_var(datapath, geopath, varname, tstep, fov, llvn, fact, radian, level):
             lats[lid] *= rad2deg
     return data, lons, lats, comment
 
-def gen_figure(inpath, geopath, outpath, varname, screen, tstep, fov, llvn, lonr, latr, fact, radian, level):
+def gen_figure(inpath, geopath, outpath, varname, screen, tstep, fov, llvn, lonr, latr, fact, radian, level, extreme):
     # read the files to get the 2D array to plot
     data, lons, lats, comment = read_var(inpath, geopath, varname, tstep, fov, llvn, fact, radian, level)
     plotpath = outpath+'/%s.png' % (varname)
     metadata = {
                 'var': varname
                 }
-    plot_world_map(lons, lats, data, metadata, plotpath, screen, lonr, latr, comment)
+    plot_world_map(lons, lats, data, metadata, plotpath, screen, lonr, latr, extreme, comment)
 
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
@@ -375,7 +382,8 @@ if __name__ == "__main__":
     ap.add_argument('-lat', '--latitude', help="latitude range for plotting", default="-90,90")
     ap.add_argument('-llvn', '--llvname', help="lonitude/latitude variable name", default="longitude,latitude")
     ap.add_argument('-factor', '--fact', help="factor for units conversion", default="1")
+    ap.add_argument('-e', '--extreme', help="minimum and maximum limits", default="")
     ap.add_argument('-r', '--radian', help="radian or degree for lon/lat", default="degree")
     ap.add_argument('-z', '--level', help="vertial level index", default="0")
     MyArgs = ap.parse_args()
-    gen_figure(MyArgs.input, MyArgs.geo, MyArgs.output, MyArgs.variable, MyArgs.screen, MyArgs.tstep, MyArgs.fov, MyArgs.llvname, MyArgs.longitude, MyArgs.latitude, MyArgs.fact, MyArgs.radian, MyArgs.level)
+    gen_figure(MyArgs.input, MyArgs.geo, MyArgs.output, MyArgs.variable, MyArgs.screen, MyArgs.tstep, MyArgs.fov, MyArgs.llvname, MyArgs.longitude, MyArgs.latitude, MyArgs.fact, MyArgs.radian, MyArgs.level, MyArgs.extreme)
