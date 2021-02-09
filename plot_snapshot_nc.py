@@ -284,7 +284,7 @@ def read_var(datapath, geopath, varname, tstep, fov, llvn, fact, radian, level):
                         else:
                             data_new[lid] = np.nan
                     data = np.concatenate((data,data_new))
-                    comment = 'Time average: %s - %s; Level: %s' % (str(tstepBeg), str(tstepEnd), str(sid))
+                    comment = 'Time average: %s - %s; Level: %s' % (str(tstepBeg), str(tstepEnd), str(zid))
                 else:
                     timestep = int(tstep)
                     if timestep < 0:
