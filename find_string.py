@@ -29,9 +29,9 @@ def find_string(argv):
             if not file.startswith('.'):
                 fullpath = os.path.join(folder, file)
                 if flag.upper() == 'TRUE':
-                    cmd = "grep -i "+str(string)+" "+str(fullpath)
+                    cmd = "grep -i \'"+str(string)+"\' \'"+str(fullpath) + "\'"
                 else:
-                    cmd = "grep "+str(string)+" "+str(fullpath)
+                    cmd = "grep \'"+str(string)+"\' "+str(fullpath) + "\'"
                 result = os.popen(cmd).read()
                 if result:
                     print("------------------------------------------------")
