@@ -37,13 +37,13 @@ def find_string(argv):
                     print("------------------------------------------------")
                     print("Found the string \""+str(string)+"\" in the file \""+str(fullpath)+"\"")
                     print(result)
-                try:
-                    with open(fullpath, "r") as f:
-                        for line in f:
-                            #if string in line:
-                            if string in line:
-                                print("file: ", ' ', line, ' ', fullpath)
-                except UnicodeDecodeError:
-                    pass # Fond non-text data
+                #try:
+                #    with open(fullpath, "r") as f:
+                #        for line in f:
+                #            #if string in line:
+                #            if string in line:
+                #                print("file: ", ' ', line, ' ', fullpath)
+                #except UnicodeDecodeError:
+                #    pass # Fond non-text data
 if __name__ == "__main__":
     find_string(sys.argv[1:])
