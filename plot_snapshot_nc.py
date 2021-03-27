@@ -148,8 +148,11 @@ def plot_world_map(lons, lats, data, metadata, plotpath, screen, lonr, latr, ext
 
 def read_var(datapath, geopath, varname, tstep, fov, llvn, fact, radian, level):
     data_name, data_extension = os.path.splitext(datapath)
+    geo_name, geo_extension = os.path.splitext(geopath)
     if not 'nc' in data_extension:
         datapath += '*'
+    if not 'nc' in geo_extension:
+        geopath += '*'
     opath, obsfname = ntpath.split(datapath)
     gpath, geofname = ntpath.split(geopath)
     if opath == '' and gpath == '':
@@ -165,6 +168,7 @@ def read_var(datapath, geopath, varname, tstep, fov, llvn, fact, radian, level):
     else:
         obsfiles = glob.glob(datapath)
         geofile  = glob.glob(geopath)
+    geofile  = sorted(geofile, key=last_6chars)
     obsfiles = sorted(obsfiles, key=last_6chars)
     comment = ''
     llvns = llvn.split(',')
@@ -185,6 +189,9 @@ def read_var(datapath, geopath, varname, tstep, fov, llvn, fact, radian, level):
                     for tid in range(len(lontmp)):
                         lats = np.concatenate((lats,lattmp[tid].ravel()))
                         lons = np.concatenate((lons,lontmp[tid].ravel()))
+                elif dim_ll == 2:
+                    lats = np.concatenate((lats,lattmp.ravel()))
+                    lons = np.concatenate((lons,lontmp.ravel()))
                 else:
                     lats = np.concatenate((lats,lattmp))
                     lons = np.concatenate((lons,lontmp))
