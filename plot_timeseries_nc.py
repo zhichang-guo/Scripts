@@ -19,8 +19,8 @@
 ##   5. python plot_timeseries_nc.py -i data_name.nc -v vname -p point_index -l dotted -c red
 ##      Draw time series of the variable at the location with point_index. The data are drawn
 ##      with the dotted red line.
-##   6. python plot_timeseries_nc.py -i data_name.nc -v vname -d first
-##      It draws time series of variables with dimensions(time,vector) 
+##   6. python plot_timeseries_nc.py -i data_name.nc -v vname -d first -m "*"
+##      It draws time series with the marker "*" for variables in dimensions(time,vector) 
 ##   7. python plot_timeseries_nc.py -i data_name.nc -v vname -p point_index -s no
 ##      The code draws the time series and output it to a png file.
 ## Author: Zhichang Guo, email: Zhichang.Guo@noaa.gov
@@ -40,7 +40,7 @@ import ntpath
 from datetime import timedelta
 from datetime import datetime
 
-def plot_time_series(dataX, timeX, dataY, metadata, plotpath, screen, varnames, comment, color, style):
+def plot_time_series(dataX, timeX, dataY, metadata, plotpath, screen, varnames, comment, color, style, marker):
 #   defaultColors = np.array(['b', 'g', 'r', 'c', 'm', 'y', 'k'])
     defaultColors = np.array(['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b', '#e377c2', '#7f7f7f','#bcbd22', '#17becf'])
     if screen.upper() == "NO":
@@ -62,7 +62,10 @@ def plot_time_series(dataX, timeX, dataY, metadata, plotpath, screen, varnames, 
             c = colors[i]
         if len(styles) > i and styles[i] != '':
             s = styles[i]
-        plt.plot(time, y, color=c, linestyle=s, label=varnames[i])
+        if marker != '':
+            plt.plot(time, y, color=c, linestyle=s, label=varnames[i], marker=marker)
+        else:
+            plt.plot(time, y, color=c, linestyle=s, label=varnames[i])
     plt.legend()
     plt.title(plttitle)
     if screen.upper() == "NO":
@@ -239,7 +242,7 @@ def read_single_var(datanc, varname, tstep, lonr, latr, lpt, lons, lats, tdim):
         comment = ''
     elif dims == 2:
         if lpt != '' or ',' not in lonr+latr:
-            if tdim.upper() == "FIRST":
+            if tdim.upper() == "LAST":
                 tds = len(datatmp) - 1
                 lds = len(datatmp[0])
             else:
@@ -267,10 +270,11 @@ def read_single_var(datanc, varname, tstep, lonr, latr, lpt, lons, lats, tdim):
                         timeX = np.append(timeX,datetime(year=1970, month=1, day=1, hour=0, minute=0, second=0) + timedelta(seconds=timetmp[i]))
                     else:
                         timeX = np.append(timeX,i)
-                    if tdim.upper() == "FIRST":
+                    if tdim.upper() == "LAST":
                         dataY[tid] = datatmp[i][lpt_index]
                     else:
                         dataY[tid] = datatmp[lpt_index][i]
+                    #print("tid = ",tid, "y = ",dataY[tid])
                 if len(lons) > 0 and len(lats) > 0:
                     comment = 'Location: %s, %s; Index: %s' % (lonF2S(lons[lpt_index]), latF2S(lats[lpt_index]), lpt_index)
                 else:
@@ -443,13 +447,13 @@ def read_var(datapath, geopath, varname, tstep, lonr, latr, lpt, fact, tdim):
             comment += ', Factor: %s'%(fact)
     return dataX, timeX, dataY, varnames, comment
 
-def gen_figure(inpath, geopath, outpath, varname, screen, tstep, lonr, latr, lpt, fact, colors, styles, tdim):
+def gen_figure(inpath, geopath, outpath, varname, screen, tstep, lonr, latr, lpt, fact, colors, styles, tdim, marker):
     dataX, timeX, dataY, varnames, comment = read_var(inpath, geopath, varname, tstep, lonr, latr, lpt, fact, tdim)
     plotpath = outpath+'/timeseries_%s.png' % varname.split(',')[0]
     metadata = {
                 'var': varname
                 }
-    plot_time_series(dataX, timeX, dataY, metadata, plotpath, screen, varnames, comment, colors, styles)
+    plot_time_series(dataX, timeX, dataY, metadata, plotpath, screen, varnames, comment, colors, styles, marker)
 
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
@@ -460,6 +464,7 @@ if __name__ == "__main__":
     ap.add_argument('-s', '--screen', help="no if plot to file", default="yes")
     ap.add_argument('-t', '--tstep', help="time step for plotting", default="0,-1")
     ap.add_argument('-d', '--tdim', help="option for time dimension", default="last")
+    ap.add_argument('-m', '--marker', help="marker option", default="")
     ap.add_argument('-p', '--point', help="location index for plotting", default="")
     ap.add_argument('-c', '--color', help="color for lines", default="")
     ap.add_argument('-l', '--linestyle', help="line styles", default="")
@@ -467,4 +472,4 @@ if __name__ == "__main__":
     ap.add_argument('-lat', '--latitude', help="latitude range for plotting", default="-90,90")
     ap.add_argument('-factor', '--fact', help="factor for units conversion", default="1")
     MyArgs = ap.parse_args()
-    gen_figure(MyArgs.input, MyArgs.geo, MyArgs.output, MyArgs.variable, MyArgs.screen, MyArgs.tstep, MyArgs.longitude, MyArgs.latitude, MyArgs.point, MyArgs.fact,MyArgs.color,MyArgs.linestyle,MyArgs.tdim)
+    gen_figure(MyArgs.input, MyArgs.geo, MyArgs.output, MyArgs.variable, MyArgs.screen, MyArgs.tstep, MyArgs.longitude, MyArgs.latitude, MyArgs.point, MyArgs.fact,MyArgs.color,MyArgs.linestyle,MyArgs.tdim,MyArgs.marker)
