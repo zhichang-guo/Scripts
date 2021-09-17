@@ -19,7 +19,9 @@
 ##   5. python plot_timeseries_nc.py -i data_name.nc -v vname -p point_index -l dotted -c red
 ##      Draw time series of the variable at the location with point_index. The data are drawn
 ##      with the dotted red line.
-##   6. python plot_timeseries_nc.py -i data_name.nc -v vname -p point_index -s no
+##   6. python plot_timeseries_nc.py -i data_name.nc -v vname -d first
+##      It draws time series of variables with dimensions(time,vector) 
+##   7. python plot_timeseries_nc.py -i data_name.nc -v vname -p point_index -s no
 ##      The code draws the time series and output it to a png file.
 ## Author: Zhichang Guo, email: Zhichang.Guo@noaa.gov
 ###############################################################################################
@@ -183,7 +185,7 @@ def tstepS2I(strTStep, tds):
         tstepEnd = tds
     return tstepBeg, tstepEnd
 
-def read_single_var(datanc, varname, tstep, lonr, latr, lpt, lons, lats):
+def read_single_var(datanc, varname, tstep, lonr, latr, lpt, lons, lats, tdim):
     dataX = np.array([])
     timeX = np.array([])
     dataY = np.array([])
@@ -224,7 +226,11 @@ def read_single_var(datanc, varname, tstep, lonr, latr, lpt, lons, lats):
             sys.exit("cannot handle variables with dimensions more than 3 (lon, lat, time or vector, time)")
     else:
         datatmp = datanc.variables[varname][:]
-    timetmp = datanc.variables['time'][:]
+    timeFlag = 1
+    try:
+        timetmp = datanc.variables['time'][:]
+    except:
+        timeFlag = 0
     dims = len(datatmp.shape)
     if dims == 1:
         dataY = np.concatenate((dataY,datatmp))
@@ -233,8 +239,12 @@ def read_single_var(datanc, varname, tstep, lonr, latr, lpt, lons, lats):
         comment = ''
     elif dims == 2:
         if lpt != '' or ',' not in lonr+latr:
-            tds = len(datatmp) - 1
-            lds = len(datatmp[0])
+            if tdim.upper() == "FIRST":
+                tds = len(datatmp) - 1
+                lds = len(datatmp[0])
+            else:
+                tds = len(datatmp[0]) - 1
+                lds = len(datatmp)
             if lpt != '':
                 lpts = lpt.split(',')
                 lpt_index = int(lpts[0])
@@ -253,8 +263,14 @@ def read_single_var(datanc, varname, tstep, lonr, latr, lpt, lons, lats):
                     i = tstepBeg + tid
                     cnt = 0.0
                     dataX[tid] = i
-                    timeX = np.append(timeX,datetime(year=1970, month=1, day=1, hour=0, minute=0, second=0) + timedelta(seconds=timetmp[i]))
-                    dataY[tid] = datatmp[i][lpt_index]
+                    if timeFlag > 0:
+                        timeX = np.append(timeX,datetime(year=1970, month=1, day=1, hour=0, minute=0, second=0) + timedelta(seconds=timetmp[i]))
+                    else:
+                        timeX = np.append(timeX,i)
+                    if tdim.upper() == "FIRST":
+                        dataY[tid] = datatmp[i][lpt_index]
+                    else:
+                        dataY[tid] = datatmp[lpt_index][i]
                 if len(lons) > 0 and len(lats) > 0:
                     comment = 'Location: %s, %s; Index: %s' % (lonF2S(lons[lpt_index]), latF2S(lats[lpt_index]), lpt_index)
                 else:
@@ -280,7 +296,10 @@ def read_single_var(datanc, varname, tstep, lonr, latr, lpt, lons, lats):
                     i = tstepBeg + tid
                     cnt = 0.0
                     dataX[tid] = i
-                    timeX = np.append(timeX,datetime(year=1970, month=1, day=1, hour=0, minute=0, second=0) + timedelta(seconds=timetmp[i]))
+                    if timeFlag > 0:
+                        timeX = np.append(timeX,datetime(year=1970, month=1, day=1, hour=0, minute=0, second=0) + timedelta(seconds=timetmp[i]))
+                    else:
+                        timeX = np.append(timeX,tid)
                     for lid in range(lds):
                         if lons[lid] >= lonBeg and lons[lid] <= lonEnd and lats[lid] >= latBeg and lats[lid] <= latEnd:
                             dataY[tid] += datatmp[i][lid]
@@ -319,7 +338,10 @@ def read_single_var(datanc, varname, tstep, lonr, latr, lpt, lons, lats):
                     t_index = tstepBeg + tid
                     cnt = 0.0
                     dataX[tid] = t_index
-                    timeX = np.append(timeX,datetime(year=1970, month=1, day=1, hour=0, minute=0, second=0) + timedelta(seconds=timetmp[t_index]))
+                    if timeFlag > 0:
+                        timeX = np.append(timeX,datetime(year=1970, month=1, day=1, hour=0, minute=0, second=0) + timedelta(seconds=timetmp[t_index]))
+                    else:
+                        timeX = np.append(timeX,tid)
                     dataY[tid] = datatmp[t_index][j_index][i_index]
                 if len(lons) > 0 and len(lats) > 0:
                     comment = 'Location: %s, %s; Index: %s, %s' % (lonF2S(lons[i_index]), latF2S(lats[j_index]), str(i_index), str(j_index))
@@ -365,7 +387,7 @@ def read_single_var(datanc, varname, tstep, lonr, latr, lpt, lons, lats):
         sys.exit("cannot handle variables with dimensions more than 2 (vector, time)")
     return dataX, timeX, dataY, comment
 
-def read_var(datapath, geopath, varname, tstep, lonr, latr, lpt, fact):
+def read_var(datapath, geopath, varname, tstep, lonr, latr, lpt, fact, tdim):
     obsfiles = glob.glob(datapath)
     geofile  = glob.glob(geopath)
     opath, obsfname = ntpath.split(datapath)
@@ -403,7 +425,7 @@ def read_var(datapath, geopath, varname, tstep, lonr, latr, lpt, fact):
                 lons = np.concatenate((lons,lontmp))
         varnames = varname.split(',')
         for vid in range(len(varnames)):
-            X, T, Y, comment = read_single_var(datanc, varnames[vid], tstep, lonr, latr, lpt, lons, lats)
+            X, T, Y, comment = read_single_var(datanc, varnames[vid], tstep, lonr, latr, lpt, lons, lats, tdim)
             if vid == 0:
                 dataX = np.array([X])
                 timeX = np.array([T])
@@ -421,8 +443,8 @@ def read_var(datapath, geopath, varname, tstep, lonr, latr, lpt, fact):
             comment += ', Factor: %s'%(fact)
     return dataX, timeX, dataY, varnames, comment
 
-def gen_figure(inpath, geopath, outpath, varname, screen, tstep, lonr, latr, lpt, fact, colors, styles):
-    dataX, timeX, dataY, varnames, comment = read_var(inpath, geopath, varname, tstep, lonr, latr, lpt, fact)
+def gen_figure(inpath, geopath, outpath, varname, screen, tstep, lonr, latr, lpt, fact, colors, styles, tdim):
+    dataX, timeX, dataY, varnames, comment = read_var(inpath, geopath, varname, tstep, lonr, latr, lpt, fact, tdim)
     plotpath = outpath+'/timeseries_%s.png' % varname.split(',')[0]
     metadata = {
                 'var': varname
@@ -437,6 +459,7 @@ if __name__ == "__main__":
     ap.add_argument('-v', '--variable', help="variable name to plot", required=True)
     ap.add_argument('-s', '--screen', help="no if plot to file", default="yes")
     ap.add_argument('-t', '--tstep', help="time step for plotting", default="0,-1")
+    ap.add_argument('-d', '--tdim', help="option for time dimension", default="last")
     ap.add_argument('-p', '--point', help="location index for plotting", default="")
     ap.add_argument('-c', '--color', help="color for lines", default="")
     ap.add_argument('-l', '--linestyle', help="line styles", default="")
@@ -444,4 +467,4 @@ if __name__ == "__main__":
     ap.add_argument('-lat', '--latitude', help="latitude range for plotting", default="-90,90")
     ap.add_argument('-factor', '--fact', help="factor for units conversion", default="1")
     MyArgs = ap.parse_args()
-    gen_figure(MyArgs.input, MyArgs.geo, MyArgs.output, MyArgs.variable, MyArgs.screen, MyArgs.tstep, MyArgs.longitude, MyArgs.latitude, MyArgs.point, MyArgs.fact,MyArgs.color,MyArgs.linestyle)
+    gen_figure(MyArgs.input, MyArgs.geo, MyArgs.output, MyArgs.variable, MyArgs.screen, MyArgs.tstep, MyArgs.longitude, MyArgs.latitude, MyArgs.point, MyArgs.fact,MyArgs.color,MyArgs.linestyle,MyArgs.tdim)
