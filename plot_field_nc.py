@@ -2,9 +2,9 @@
 ###################################################################################################
 ## Create a plot on a map with gridded data stored in netcdf files, examples:
 ##   1. python plot_field_nc.py -i file_name.nc -v vname 
-##      2D variable is assumed to be stationary field data. Assumng longitude/latitude and the
-##      variable can be found in the same file. For 3D variables, the dimensions are assumed to 
-##      be (lon,lat,time)
+##      The code will make a geographical plot for a variable "vname". 2D variable is assumed to 
+##      be stationary field data and longitude/latitude can be found in the same file. For 3D 
+##      variables, the dimensions are assumed to be (lon,lat,time)
 ##   2. python plot_field_nc.py -i data.nc -g geo.nc -v vname -lon lon1,lon2 -lat lat1,lat2
 ##      The code will make a geographical plot over a specific spatial domain. The variable vname
 ##      is assumed to be stored in data.nc while the geographic information is stored in geo.nc.
@@ -277,7 +277,7 @@ def read_var(datapath, geopath, varname, tstep, llvn):
         datanc.close()
     return tiles, dataout, lonout, latout, comment
 
-def gen_figure(inpath, geopath, outpath, varname, screen, tstep, llvn, lonr, latr, extreme):
+def gen_figure(inpath, varname, geopath, outpath, screen, tstep, llvn, lonr, latr, extreme):
     # read the files to get the 2D array to plot
     tiles, data, lons, lats, comment = read_var(inpath, geopath, varname, tstep, llvn)
     plotpath = outpath+'/%s.png' % (varname)
@@ -288,15 +288,15 @@ def gen_figure(inpath, geopath, outpath, varname, screen, tstep, llvn, lonr, lat
 
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
-    ap.add_argument('-o', '--output', help="path to output directory", default="./")
-    ap.add_argument('-i', '--input', help="path to prefix of input files (no tileN.nc)", required=True)
-    ap.add_argument('-g', '--geo', help="path to prefix of input files for geographic info", default="")
-    ap.add_argument('-v', '--variable', help="variable name to plot", required=True)
-    ap.add_argument('-s', '--screen', help="no if plot to file", default="yes")
-    ap.add_argument('-t', '--tstep', help="time step for plotting", default="0")
-    ap.add_argument('-lon', '--lon', help="longitude range for plotting", default="-180,180")
-    ap.add_argument('-lat', '--lat', help="latitude range for plotting", default="-90,90")
+    ap.add_argument('-i', '--input',      help="path to prefix of input files (no tileN.nc)", required=True)
+    ap.add_argument('-v', '--variable',   help="variable name to plot", required=True)
+    ap.add_argument('-o', '--output',     help="path to output directory", default="./")
+    ap.add_argument('-g', '--geoin',      help="path to prefix of input files for geographic info", default="")
+    ap.add_argument('-s', '--screen',     help="no if plot to file", default="yes")
+    ap.add_argument('-t', '--tstep',      help="time step for plotting", default="0")
+    ap.add_argument('-lon', '--lon',      help="longitude range for plotting", default="-180,180")
+    ap.add_argument('-lat', '--lat',      help="latitude range for plotting", default="-90,90")
     ap.add_argument('-llvn', '--llvname', help="lonitude/latitude variable name", default="longitude,latitude")
-    ap.add_argument('-e', '--extreme', help="minimum and maximum limits", default="")
+    ap.add_argument('-e', '--extreme',    help="minimum and maximum limits", default="")
     MyArgs = ap.parse_args()
-    gen_figure(MyArgs.input, MyArgs.geo, MyArgs.output, MyArgs.variable, MyArgs.screen, MyArgs.tstep, MyArgs.llvname, MyArgs.lon, MyArgs.lat, MyArgs.extreme)
+    gen_figure(MyArgs.input, MyArgs.variable, MyArgs.geoin, MyArgs.output, MyArgs.screen, MyArgs.tstep, MyArgs.llvname, MyArgs.lon, MyArgs.lat, MyArgs.extreme)
