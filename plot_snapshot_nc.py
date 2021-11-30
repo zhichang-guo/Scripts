@@ -148,27 +148,43 @@ def plot_world_map(lons, lats, data, metadata, plotpath, screen, lonr, latr, ext
 
 def read_var(datapath, geopath, varname, tstep, fov, llvn, fact, radian, level):
     data_name, data_extension = os.path.splitext(datapath)
-    geo_name, geo_extension = os.path.splitext(geopath)
+    if geopath == "":
+        geo_name, geo_extension = os.path.splitext(datapath)
+    else:
+        geo_name, geo_extension = os.path.splitext(geopath)
     if not 'nc' in data_extension:
         datapath += '*'
     if not 'nc' in geo_extension:
         geopath += '*'
     opath, obsfname = ntpath.split(datapath)
-    gpath, geofname = ntpath.split(geopath)
+    if geopath == "":
+        gpath = ''
+        geofname = ''
+    else:
+        gpath, geofname = ntpath.split(geopath)
     if opath == '' and gpath == '':
         cpath = os.getcwd()
         obsfiles = glob.glob(os.path.join(cpath,obsfname))
-        geofile  = glob.glob(os.path.join(cpath,geofname))
+        if geofname == '':
+            geofiles = glob.glob(os.path.join(cpath,obsfname))
+        else:
+            geofiles = glob.glob(os.path.join(cpath,geofname))
     elif opath != '' and gpath == '':
         obsfiles = glob.glob(datapath)
-        geofile  = glob.glob(os.path.join(opath,geofname))
+        if geofname == '':
+            geofiles = obsfiles
+        else:
+            geofiles = glob.glob(os.path.join(opath,geofname))
     elif opath == '' and gpath != '':
         obsfiles = glob.glob(os.path.join(gpath,datapath))
-        geofile  = glob.glob(geopath)
+        geofiles = glob.glob(geopath)
     else:
         obsfiles = glob.glob(datapath)
-        geofile  = glob.glob(geopath)
-    geofile  = sorted(geofile, key=last_6chars)
+        if geofname == '':
+            geofiles = obsfiles
+        else:
+            geofiles = glob.glob(geopath)
+    geofiles = sorted(geofiles, key=last_6chars)
     obsfiles = sorted(obsfiles, key=last_6chars)
     comment = ''
     llvns = llvn.split(',')
@@ -180,7 +196,7 @@ def read_var(datapath, geopath, varname, tstep, fov, llvn, fact, radian, level):
         zid = int(level)
     if not geopath == "":
         if 'SAME' in fov.upper():
-            for g in geofile:
+            for g in geofiles:
                 geonc = nc.Dataset(g)
                 lontmp = geonc.variables[llvns[0]][:]
                 lattmp = geonc.variables[llvns[1]][:]
@@ -197,7 +213,7 @@ def read_var(datapath, geopath, varname, tstep, fov, llvn, fact, radian, level):
                     lons = np.concatenate((lons,lontmp))
                 geonc.close()
         else:
-            for g in geofile:
+            for g in geofiles:
                 geonc = nc.Dataset(g)
                 lontmp = geonc.variables[llvns[0]][:]
                 lattmp = geonc.variables[llvns[1]][:]
