@@ -190,10 +190,23 @@ def read_var(datapath, geopath, varname, tstep, llvn):
         tile += 1
         if tile == 1:
             tmpdata = nc.Dataset(f,'r')
+            tmplon = tmpdata.variables[llvns[0]][:]
             tmplat = tmpdata.variables[llvns[1]][:]
             tmpdata.close()
     tiles = tile
-    arrayshape = tmplat.shape + (tiles,)
+    dims_lon = len(tmplon.shape)
+    dims_lat = len(tmplat.shape)
+    if dims_lon == 1 and dims_lat == 1:
+        yds = len(tmplat)
+        xds = len(tmplon)
+        arrayshape = (yds,) + (xds,) + (tiles,)
+    elif dims_lon == 2 and dims_lat == 2:
+        arrayshape = tmplat.shape + (tiles,)
+    elif dims_lon == 3 and dims_lat == 3:
+        arrayshape = tmplat[0,...].shape + (tiles,)
+    else:
+        sys.exit("Error: cannot handle variables with dimensions more than 3 or less than 1 for lon/lat")
+
     dataout = np.empty(arrayshape)
     lonout = np.empty(arrayshape)
     latout = np.empty(arrayshape)
@@ -212,11 +225,22 @@ def read_var(datapath, geopath, varname, tstep, llvn):
             lons = np.rot90(lons)
             if dims == 2:
                 data = np.rot90(data)
-            else:
+            elif dims == 3:
                 for i in range(tds):
                     data[i,...] = np.rot90(data[i,...])
-        latout[:,:,t-1] = lats
-        lonout[:,:,t-1] = lons
+        if dims_lon == 1 and dims_lat == 1:
+            yds = len(lats)
+            xds = len(lons)
+            for yid in range(yds):
+                for xid in range(xds):
+                    latout[yid,xid,t-1] = lats[yid]
+                    lonout[yid,xid,t-1] = lons[xid]
+        elif dims_lon == 2 and dims_lat == 2:
+            latout[:,:,t-1] = lats
+            lonout[:,:,t-1] = lons
+        elif dims_lon == 3 and dims_lat == 3:
+            latout[:,:,t-1] = lats[0,...]
+            lonout[:,:,t-1] = lons[0,...]
         if dims == 2:
             dataout[:,:,t-1] = data
         elif dims == 3:
