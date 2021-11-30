@@ -227,6 +227,24 @@ def read_single_var(datanc, varname, tstep, lonr, latr, lpt, lons, lats, tdim):
                         datatmp[tid][yid][xid] -= datatmp2[tid][yid][xid]
         else:
             sys.exit("cannot handle variables with dimensions more than 3 (lon, lat, time or vector, time)")
+    elif '/' in varname:
+        varnames = varname.split('/')
+        datatmp = datanc.variables[varnames[0]][:]
+        datatmp2 = datanc.variables[varnames[1]][:]
+        if len(datatmp.shape) == 1:
+            for lid in range(len(datatmp)):
+                datatmp[lid] /= datatmp2[lid]
+        elif len(datatmp.shape) == 2:
+            for tid in range(len(datatmp)):
+                for lid in range(len(datatmp[0])):
+                    datatmp[tid][lid] /= datatmp2[tid][lid]
+        elif len(datatmp.shape) == 3:
+            for tid in range(len(datatmp)):
+                for yid in range(len(datatmp[0])):
+                    for xid in range(len(datatmp[0][0])):
+                        datatmp[tid][yid][xid] /= datatmp2[tid][yid][xid]
+        else:
+            sys.exit("cannot handle variables with dimensions more than 3 (lon, lat, time or vector, time)")
     else:
         datatmp = datanc.variables[varname][:]
     timeFlag = 1
