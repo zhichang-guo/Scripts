@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 ###################################################################################################
-## Create a plot on a map with gridded data stored in netcdf files, examples:
+## Create a plot on a map with gridded data (regularly gridded, Gaussian, fv3 tiles) stored 
+## in netcdf files, examples:
 ##   1. python plot_field_nc.py -i file_name.nc -v vname 
 ##      The code will make a geographical plot for a variable "vname". 2D variable is assumed to 
 ##      be stationary field data and longitude/latitude can be found in the same file. For 3D 
@@ -130,7 +131,7 @@ def plot_world_map(tiles, lons, lats, data, metadata, plotpath, screen, lonr, la
         plttitle = 'Variable: %s' % (metadata['var'])
     else:
         plttitle = 'Variable: %s; %s' % (metadata['var'], comment)
-    for t in range(0,tiles):
+    for t in range(tiles):
         cs = ax.pcolormesh(lons[...,t], lats[...,t], data_new[...,t],vmin=vmin,vmax=vmax,cmap=cmap)
     cb = plt.colorbar(cs, orientation='horizontal', shrink=0.5, pad=.04)
     cb.set_label(cbarlabel, fontsize=12)
@@ -210,7 +211,7 @@ def read_var(datapath, geopath, varname, tstep, llvn):
     dataout = np.empty(arrayshape)
     lonout = np.empty(arrayshape)
     latout = np.empty(arrayshape)
-    for t in range(0,tiles):
+    for t in range(tiles):
         datafile = obsfiles[t]
         geofile = geofiles[t]
         geonc = nc.Dataset(geofile)
@@ -221,28 +222,28 @@ def read_var(datapath, geopath, varname, tstep, llvn):
         dims = len(data.shape)
         tds = len(data)
         if tiles == 6 and t in [2,3,4]:
-            lats = np.rot90(lats)
-            lons = np.rot90(lons)
-            if dims == 2:
-                data = np.rot90(data)
-            elif dims == 3:
-                for i in range(tds):
-                    data[i,...] = np.rot90(data[i,...])
+           lats = np.rot90(lats)
+           lons = np.rot90(lons)
+           if dims == 2:
+               data = np.rot90(data)
+           elif dims == 3:
+               for i in range(tds):
+                   data[i,...] = np.rot90(data[i,...])
         if dims_lon == 1 and dims_lat == 1:
             yds = len(lats)
             xds = len(lons)
             for yid in range(yds):
                 for xid in range(xds):
-                    latout[yid,xid,t-1] = lats[yid]
-                    lonout[yid,xid,t-1] = lons[xid]
+                    latout[yid,xid,t] = lats[yid]
+                    lonout[yid,xid,t] = lons[xid]
         elif dims_lon == 2 and dims_lat == 2:
-            latout[:,:,t-1] = lats
-            lonout[:,:,t-1] = lons
+            latout[:,:,t] = lats
+            lonout[:,:,t] = lons
         elif dims_lon == 3 and dims_lat == 3:
-            latout[:,:,t-1] = lats[0,...]
-            lonout[:,:,t-1] = lons[0,...]
+            latout[:,:,t] = lats[0,...]
+            lonout[:,:,t] = lons[0,...]
         if dims == 2:
-            dataout[:,:,t-1] = data
+            dataout[:,:,t] = data
         elif dims == 3:
             yds = len(data[0])
             xds = len(data[0][0])
@@ -270,7 +271,7 @@ def read_var(datapath, geopath, varname, tstep, llvn):
                 timestep = min(timestep,tds-1)
                 data_new = data[timestep,:,:]
                 comment = 'Time step: %s of 0 - %s' % (str(timestep), str(tds-1))
-            dataout[:,:,t-1] = data_new
+            dataout[:,:,t] = data_new
         else:
             sys.exit("Error: cannot handle variables with dimensions more than 3 or less than 2")
         geonc.close()
