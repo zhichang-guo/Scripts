@@ -34,7 +34,6 @@ import cartopy.feature as cfeature
 import netCDF4 as nc
 import numpy as np
 import argparse
-#import glob
 import sys
 import ntpath
 import os
@@ -352,10 +351,13 @@ if __name__ == "__main__":
     ap.add_argument('-f',    '--vector',   help="vectorized file or not", default="")
     MyArgs = ap.parse_args()
     print("Input data file: ",MyArgs.datain)
-    print("Plot variable:   ",MyArgs.variable)
+    if not MyArgs.vector == "":
+        if MyArgs.vector == "same":
+            print("Input v2f file:  ",MyArgs.datain)
+        else:
+            print("Input v2f file:  ",MyArgs.vector)
     if not MyArgs.geoin == "":
         print("Input geo file:  ",MyArgs.geoin)
-    if not MyArgs.vector == "":
-        print("Input v2f file:  ",MyArgs.vector)
+    print("Plot variable:   ",MyArgs.variable)
     print("Lon/lat varname: ",MyArgs.llvn)
     gen_figure(MyArgs.datain, MyArgs.variable, MyArgs.geoin, MyArgs.output, MyArgs.screen, MyArgs.tstep, MyArgs.llvn, MyArgs.lon, MyArgs.lat, MyArgs.extreme, MyArgs.vector)
