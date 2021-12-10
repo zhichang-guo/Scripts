@@ -118,15 +118,16 @@ def plot_world_map(lons, lats, data, metadata, plotpath, screen, lonr, latr, ext
     scaleSN = 180/(latEnd-latBeg)*10
     scaleMax = max(scaleWE,scaleSN)
     ax.set_extent([lonBeg, lonEnd, latBeg, latEnd])
-    vmax = np.nanmean(data)+np.nanstd(data)*2
-    vmin = np.nanmean(data)-np.nanstd(data)*2
     if not extreme == '':
         strMinMax = extreme.split(',')
-        vmin = float(strMinMax[0])
-        vmax = float(strMinMax[1])
-        invalid = np.logical_or(data > vmax, data < vmin)
+        vmin_c = float(strMinMax[0])
+        vmax_c = float(strMinMax[1])
+        invalid = np.logical_or(data > vmax_c, data < vmin_c)
         data[invalid] = np.nan
         data = np.ma.masked_where(np.isnan(data), data)
+    vmax = np.nanmean(data)+np.nanstd(data)*2
+    vmin = np.nanmean(data)-np.nanstd(data)*2
+    print("vmax, vmin: ",vmax, ' ', vmin)
     cmap = 'viridis'
     cbarlabel = '%s' % (metadata['var'])
     if comment == '':

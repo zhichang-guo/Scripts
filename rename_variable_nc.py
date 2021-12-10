@@ -2,9 +2,9 @@
 ######################################################################################################
 ## Rename variables in an exising netcdf file, examples:
 ##   1. python rename_variable_nc.py -i file.nc -v temperatureAir -n temperatureAir@ObsError
-##      The vaiable temperatureAir is renamed to temperatureAir@ObsError in the file "file.nc"
+##      The variable temperatureAir is renamed to temperatureAir@ObsError in the file "file.nc"
 ##   2. python rename_variable_nc.py -i in.nc -o out.nc -v temperatureAir -n temperatureAir@ObsError
-##      The input file "in.nc" is duplicated to a new file "out.nc" and the vaiable "temperatureAir"
+##      The input file "in.nc" is duplicated to a new file "out.nc" and the variable "temperatureAir"
 ##      is renamed to the new variable "temperatureAir@ObsError" in that file
 ## Author: Zhichang Guo, email: Zhichang.Guo@noaa.gov
 ######################################################################################################

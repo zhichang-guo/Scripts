@@ -193,9 +193,9 @@ def read_var(datapath, geopath, varname, tstep, llvn, vecpath):
             tmpvec = nc.Dataset(datapath, "r")
         else:
             tmpvec = nc.Dataset(vecpath, "r")
-        cube_i    = tmpvec['cube_i'][:]
-        cube_j    = tmpvec['cube_j'][:]
-        cube_tile = tmpvec['cube_tile'][:]
+        cube_i    = tmpvec['cube_i'][...]
+        cube_j    = tmpvec['cube_j'][...]
+        cube_tile = tmpvec['cube_tile'][...]
         tmpvec.close()
 #
         shp = np.shape(cube_i)
@@ -205,18 +205,33 @@ def read_var(datapath, geopath, varname, tstep, llvn, vecpath):
         ncdata = nc.Dataset(datapath, "r")
         tmpdata = ncdata[varname][...]
         dims = len(tmpdata.shape)
+        dims_cube = len(cube_i.shape)
         if dims == 2:
-            for ip in range(0, locations):
-                i = cube_i[ip] - 1
-                j = cube_j[ip] - 1
-                tile = cube_tile[ip] - 1
-                dataout[j,i,tile] = tmpdate[0,ip]
+            if dims_cube == 1:
+                for ip in range(0, locations):
+                    if cube_i[ip]>-1 and cube_i[ip]>-1 and cube_i[ip]>-1:
+                        i = cube_i[ip] - 1
+                        j = cube_j[ip] - 1
+                        tile = cube_tile[ip] - 1
+                        dataout[j,i,tile] = tmpdata[0,ip]
+            else:
+                shp_vec  = cube_i.shape
+                yds_vec  = shp_vec[0]
+                xds_vec  = shp_vec[1]
+                for jp in range(0, yds_vec):
+                    for ip in range(0, xds_vec):
+                        if cube_i[jp,ip]>-1 and cube_i[jp,ip]>-1 and cube_i[jp,ip]>-1:
+                            i = cube_i[jp,ip] - 1
+                            j = cube_j[jp,ip] - 1
+                            tile = cube_tile[jp,ip] - 1
+                            dataout[j,i,tile] = tmpdata[jp,ip]
         elif dims == 1:
             for ip in range(0, locations):
-                i = cube_i[ip] - 1
-                j = cube_j[ip] - 1
-                tile = cube_tile[ip] - 1
-                dataout[j,i,tile] = tmpdata[ip]
+                if cube_i[ip]>-1 and cube_i[ip]>-1 and cube_i[ip]>-1:
+                    i = cube_i[ip] - 1
+                    j = cube_j[ip] - 1
+                    tile = cube_tile[ip] - 1
+                    dataout[j,i,tile] = tmpdata[ip]
         else:
             sys.exit("cannot deal with dimensions ("+str(dims)+") other than 1 and 2")
         ncdata.close()
