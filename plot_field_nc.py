@@ -143,14 +143,14 @@ def plot_world_map(tiles, lons, lats, data, metadata, plotpath, screen, lonr, la
     else:
         plt.show()
 
-def read_var(datapath, geopath, varname, tstep, llvn, vecpath):
+def read_var(datapath, geopath, varname, tstep, llvn, vecpath, reso):
     ntile = 6
     comment = ''
     llvns = llvn.split(',')
     if not vecpath == '':
         tiles = ntile
-        nx = 96
-        ny = 96
+        nx = reso
+        ny = reso
         if geopath == '':
             sys.exit("The global geographic info is required!")
         else:
@@ -206,14 +206,33 @@ def read_var(datapath, geopath, varname, tstep, llvn, vecpath):
         tmpdata = ncdata[varname][...]
         dims = len(tmpdata.shape)
         dims_cube = len(cube_i.shape)
-        if dims == 2:
+        if dims == 3:
             if dims_cube == 1:
                 for ip in range(0, locations):
-                    if cube_i[ip]>-1 and cube_i[ip]>-1 and cube_i[ip]>-1:
+                    if (not cube_i[ip]==np.nan) and cube_i[ip]>-1 and cube_i[ip]>-1 and cube_i[ip]>-1:
                         i = cube_i[ip] - 1
                         j = cube_j[ip] - 1
                         tile = cube_tile[ip] - 1
-                        dataout[j,i,tile] = tmpdata[0,ip]
+                        dataout[j,i,tile] = tmpdata[tstep,0,ip]
+            else:
+                shp_vec  = cube_i.shape
+                yds_vec  = shp_vec[0]
+                xds_vec  = shp_vec[1]
+                for jp in range(0, yds_vec):
+                    for ip in range(0, xds_vec):
+                        if cube_i[jp,ip]>-1 and cube_i[jp,ip]>-1 and cube_i[jp,ip]>-1:
+                            i = cube_i[jp,ip] - 1
+                            j = cube_j[jp,ip] - 1
+                            tile = cube_tile[jp,ip] - 1
+                            dataout[j,i,tile] = tmpdata[tstep,jp,ip]
+        elif dims == 2:
+            if dims_cube == 1:
+                for ip in range(0, locations):
+                    if (not cube_i[ip]==np.nan) and cube_i[ip]>-1 and cube_i[ip]>-1 and cube_i[ip]>-1:
+                        i = cube_i[ip] - 1
+                        j = cube_j[ip] - 1
+                        tile = cube_tile[ip] - 1
+                        dataout[j,i,tile] = tmpdata[tstep,ip]
             else:
                 shp_vec  = cube_i.shape
                 yds_vec  = shp_vec[0]
@@ -342,9 +361,9 @@ def read_var(datapath, geopath, varname, tstep, llvn, vecpath):
             tmpdata.close()
     return tiles, dataout, lonout, latout, comment
 
-def gen_figure(inpath, varname, geopath, outpath, screen, tstep, llvn, lonr, latr, extreme, vector):
+def gen_figure(inpath, varname, geopath, outpath, screen, tstep, llvn, lonr, latr, extreme, vector, reso):
     # read the files to get the 2D array to plot
-    tiles, data, lons, lats, comment = read_var(inpath, geopath, varname, tstep, llvn, vector)
+    tiles, data, lons, lats, comment = read_var(inpath, geopath, varname, tstep, llvn, vector, reso)
     plotpath = outpath+'/%s.png' % (varname)
     metadata = {
                 'var': varname
@@ -358,12 +377,13 @@ if __name__ == "__main__":
     ap.add_argument('-o',    '--output',   help="path to output directory", type=str, default="./")
     ap.add_argument('-g',    '--geoin',    help="path to prefix of input files for geographic info", type=str, default="")
     ap.add_argument('-s',    '--screen',   help="no if plot to file", type=str, default="yes")
-    ap.add_argument('-t',    '--tstep',    help="time step for plotting", type=str, default="0")
+    ap.add_argument('-t',    '--tstep',    help="time step for plotting", type=int, default=0)
     ap.add_argument('-lon',  '--lon',      help="longitude range for plotting", type=str, default="-180,180")
     ap.add_argument('-lat',  '--lat',      help="latitude range for plotting", type=str, default="-90,90")
     ap.add_argument('-ll',   '--llvn',     help="lonitude/latitude variable name", type=str, default="longitude,latitude")
     ap.add_argument('-e',    '--extreme',  help="minimum and maximum limits", type=str, default="")
     ap.add_argument('-f',    '--vector',   help="vectorized file or not", default="")
+    ap.add_argument('-r',    '--reso',     help="spatial resolution", type=int, default=96)
     MyArgs = ap.parse_args()
     print("Input data file: ",MyArgs.datain)
     if not MyArgs.vector == "":
@@ -375,4 +395,4 @@ if __name__ == "__main__":
         print("Input geo file:  ",MyArgs.geoin)
     print("Plot variable:   ",MyArgs.variable)
     print("Lon/lat varname: ",MyArgs.llvn)
-    gen_figure(MyArgs.datain, MyArgs.variable, MyArgs.geoin, MyArgs.output, MyArgs.screen, MyArgs.tstep, MyArgs.llvn, MyArgs.lon, MyArgs.lat, MyArgs.extreme, MyArgs.vector)
+    gen_figure(MyArgs.datain, MyArgs.variable, MyArgs.geoin, MyArgs.output, MyArgs.screen, MyArgs.tstep, MyArgs.llvn, MyArgs.lon, MyArgs.lat, MyArgs.extreme, MyArgs.vector, MyArgs.reso)
