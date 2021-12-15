@@ -143,7 +143,7 @@ def plot_world_map(tiles, lons, lats, data, metadata, plotpath, screen, lonr, la
     else:
         plt.show()
 
-def read_var(datapath, geopath, varname, tstep, llvn, vecpath, reso):
+def read_var(datapath, geopath, varname, tstep, llvn, vecpath, reso, radian):
     ntile = 6
     comment = ''
     llvns = llvn.split(',')
@@ -154,40 +154,64 @@ def read_var(datapath, geopath, varname, tstep, llvn, vecpath, reso):
         if geopath == '':
             sys.exit("The global geographic info is required!")
         else:
-            for tile in range(0, ntile):
-                geofile = geopath.replace(".nc", ".tile" + str(tile+1) + ".nc")
-                if not exists(geofile):
-                    geofile = geopath.replace(".nc4", ".tile" + str(tile+1) + ".nc4")
-                tmpgeo  = nc.Dataset(geofile, "r", format="NETCDF4")
+            if exists(geopath):
+                tmpgeo  = nc.Dataset(geopath, "r", format="NETCDF4")
                 tmplon  = tmpgeo.variables[llvns[0]][...]
                 tmplat  = tmpgeo.variables[llvns[1]][...]
-                dims_geo = len(tmplon.shape)
-                if dims_geo == 3:
-                    lons = tmplon[0,:,:]
-                    lats = tmplat[0,:,:]
-                elif dims_geo == 2:
-                    lons = tmplon[:,:]
-                    lats = tmplat[:,:]
-                elif dims_geo == 1:
-                    yds_ll = len(tmplat)
-                    xds_ll = len(tmplon)
-                    lons = np.zeros((yds_ll, xds_ll))
-                    lats = np.zeros((yds_ll, xds_ll))
-                    for yid in range(yds_ll):
-                        for xid in range(xds_ll):
-                            lats[yid,xid] = tmplat[yid]
-                            lons[yid,xid] = tmplon[xid]
+                if 'RADIAN' in radian.upper():
+                    tmplon = np.degrees(tmplon[...])
+                    tmplat = np.degrees(tmplat[...])
+                dims = len(tmplon.shape)
+                if dims == 3:
+                    shp_geo  = tmplon.shape
+                    tds_geo  = shp_geo[0]
+                    yds_geo  = shp_geo[1]
+                    xds_geo  = shp_geo[2]
+                    lonout   = np.zeros((yds_geo, xds_geo, tds_geo))
+                    latout   = np.zeros((yds_geo, xds_geo, tds_geo))
+                    for tile in range(0, tds_geo):
+                        lonout[:,:,tile]  = tmplon[tile,:,:]
+                        latout[:,:,tile]  = tmplat[tile,:,:]
                 else:
-                    sys.exit("The dimension "+str(dims_geo)+" is not expected!")
-                if tile == 0:
-                    shp_geo  = lons.shape
-                    yds_geo  = shp_geo[0]
-                    xds_geo  = shp_geo[1]
-                    lonout   = np.zeros((yds_geo, xds_geo, tiles))
-                    latout   = np.zeros((yds_geo, xds_geo, tiles))
-                latout[:,:,tile]  = lats
-                lonout[:,:,tile]  = lons
-                tmpgeo.close()
+                    sys.exit("The dimension "+str(dims)+" is not expected!")
+            else:
+                for tile in range(0, ntile):
+                    geofile = geopath.replace(".nc", ".tile" + str(tile+1) + ".nc")
+                    if not exists(geofile):
+                        geofile = geopath.replace(".nc4", ".tile" + str(tile+1) + ".nc4")
+                    tmpgeo  = nc.Dataset(geofile, "r", format="NETCDF4")
+                    tmplon  = tmpgeo.variables[llvns[0]][...]
+                    tmplat  = tmpgeo.variables[llvns[1]][...]
+                    if 'RADIAN' in radian.upper():
+                        tmplon = np.degrees(tmplon[...])
+                        tmplat = np.degrees(tmplat[...])
+                    dims_geo = len(tmplon.shape)
+                    if dims_geo == 3:
+                        lons = tmplon[0,:,:]
+                        lats = tmplat[0,:,:]
+                    elif dims_geo == 2:
+                        lons = tmplon[:,:]
+                        lats = tmplat[:,:]
+                    elif dims_geo == 1:
+                        yds_ll = len(tmplat)
+                        xds_ll = len(tmplon)
+                        lons = np.zeros((yds_ll, xds_ll))
+                        lats = np.zeros((yds_ll, xds_ll))
+                        for yid in range(yds_ll):
+                            for xid in range(xds_ll):
+                                lats[yid,xid] = tmplat[yid]
+                                lons[yid,xid] = tmplon[xid]
+                    else:
+                        sys.exit("The dimension "+str(dims_geo)+" is not expected!")
+                    if tile == 0:
+                        shp_geo  = lons.shape
+                        yds_geo  = shp_geo[0]
+                        xds_geo  = shp_geo[1]
+                        lonout   = np.zeros((yds_geo, xds_geo, tiles))
+                        latout   = np.zeros((yds_geo, xds_geo, tiles))
+                    latout[:,:,tile]  = lats
+                    lonout[:,:,tile]  = lons
+                    tmpgeo.close()
         dataout = np.zeros((ny, nx, tiles))
         if vecpath == 'same':
             tmpvec = nc.Dataset(datapath, "r")
@@ -361,9 +385,9 @@ def read_var(datapath, geopath, varname, tstep, llvn, vecpath, reso):
             tmpdata.close()
     return tiles, dataout, lonout, latout, comment
 
-def gen_figure(inpath, varname, geopath, outpath, screen, tstep, llvn, lonr, latr, extreme, vector, reso):
+def gen_figure(inpath, varname, geopath, outpath, screen, tstep, llvn, lonr, latr, extreme, vector, reso, radian):
     # read the files to get the 2D array to plot
-    tiles, data, lons, lats, comment = read_var(inpath, geopath, varname, tstep, llvn, vector, reso)
+    tiles, data, lons, lats, comment = read_var(inpath, geopath, varname, tstep, llvn, vector, reso, radian)
     plotpath = outpath+'/%s.png' % (varname)
     metadata = {
                 'var': varname
@@ -383,7 +407,8 @@ if __name__ == "__main__":
     ap.add_argument('-ll',   '--llvn',     help="lonitude/latitude variable name", type=str, default="longitude,latitude")
     ap.add_argument('-e',    '--extreme',  help="minimum and maximum limits", type=str, default="")
     ap.add_argument('-f',    '--vector',   help="vectorized file or not", default="")
-    ap.add_argument('-r',    '--reso',     help="spatial resolution", type=int, default=96)
+    ap.add_argument('-rs',   '--reso',     help="spatial resolution", type=int, default=96)
+    ap.add_argument('-rd',   '--radian',   help="radian or degree for lon/lat", default="degree")
     MyArgs = ap.parse_args()
     print("Input data file: ",MyArgs.datain)
     if not MyArgs.vector == "":
@@ -395,4 +420,4 @@ if __name__ == "__main__":
         print("Input geo file:  ",MyArgs.geoin)
     print("Plot variable:   ",MyArgs.variable)
     print("Lon/lat varname: ",MyArgs.llvn)
-    gen_figure(MyArgs.datain, MyArgs.variable, MyArgs.geoin, MyArgs.output, MyArgs.screen, MyArgs.tstep, MyArgs.llvn, MyArgs.lon, MyArgs.lat, MyArgs.extreme, MyArgs.vector, MyArgs.reso)
+    gen_figure(MyArgs.datain, MyArgs.variable, MyArgs.geoin, MyArgs.output, MyArgs.screen, MyArgs.tstep, MyArgs.llvn, MyArgs.lon, MyArgs.lat, MyArgs.extreme, MyArgs.vector, MyArgs.reso, MyArgs.radian)
