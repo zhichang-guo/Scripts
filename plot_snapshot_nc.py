@@ -33,7 +33,8 @@ import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
 import cartopy.crs as ccrs
 import cartopy.feature as cfeature
-import netCDF4 as nc
+#import netCDF4 as nc
+from netCDF4 import Dataset
 import numpy as np
 import argparse
 import glob
@@ -119,6 +120,7 @@ def plot_world_map(lons, lats, data, metadata, plotpath, screen, lonr, latr, ext
     scaleMax = max(scaleWE,scaleSN)
     ax.set_extent([lonBeg, lonEnd, latBeg, latEnd])
     if not extreme == '':
+        print("extreme: ", extreme)
         strMinMax = extreme.split(',')
         vmin_c = float(strMinMax[0])
         vmax_c = float(strMinMax[1])
@@ -163,24 +165,12 @@ def read_var(datapath, geopath, varname, tstep, fov, llvn, fact, radian, level):
         geofname = ''
     else:
         gpath, geofname = ntpath.split(geopath)
-    if opath == '' and gpath == '':
-        cpath = os.getcwd()
-        obsfiles = glob.glob(os.path.join(cpath,obsfname))
-        if geofname == '':
-            geofiles = glob.glob(os.path.join(cpath,obsfname))
-        else:
-            geofiles = glob.glob(os.path.join(cpath,geofname))
-    elif opath != '' and gpath == '':
-        obsfiles = glob.glob(datapath)
-        if geofname == '':
-            geofiles = obsfiles
-        else:
-            geofiles = glob.glob(os.path.join(opath,geofname))
-    elif opath == '' and gpath != '':
-        obsfiles = glob.glob(os.path.join(gpath,datapath))
-        geofiles = glob.glob(geopath)
+    if opath == '':
+        opath = os.getcwd()
+    obsfiles = glob.glob(os.path.join(opath,obsfname))
+    if gpath == '':
+        geofiles = obsfiles 
     else:
-        obsfiles = glob.glob(datapath)
         if geofname == '':
             geofiles = obsfiles
         else:
@@ -198,7 +188,8 @@ def read_var(datapath, geopath, varname, tstep, fov, llvn, fact, radian, level):
     if not geopath == "":
         if 'SAME' in fov.upper():
             for g in geofiles:
-                geonc = nc.Dataset(g)
+#               geonc = nc.Dataset(g)
+                geonc = Dataset(g, "r")
                 lontmp = geonc.variables[llvns[0]][:]
                 lattmp = geonc.variables[llvns[1]][:]
                 dim_ll = len(lontmp.shape)
@@ -215,14 +206,16 @@ def read_var(datapath, geopath, varname, tstep, fov, llvn, fact, radian, level):
                 geonc.close()
         else:
             for g in geofiles:
-                geonc = nc.Dataset(g)
+#               geonc = nc.Dataset(g)
+                geonc = Dataset(g, "r")
                 lontmp = geonc.variables[llvns[0]][:]
                 lattmp = geonc.variables[llvns[1]][:]
                 lats = np.concatenate((lats,lattmp))
                 lons = np.concatenate((lons,lontmp))
                 geonc.close()
     for f in obsfiles:
-        datanc = nc.Dataset(f)
+#       datanc = nc.Dataset(f)
+        datanc = Dataset(f, "r")
         if geopath == "":
             lontmp = datanc.variables[llvns[0]][:]
             lattmp = datanc.variables[llvns[1]][:]
